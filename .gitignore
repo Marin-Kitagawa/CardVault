@@ -10,3 +10,8 @@
 ## OS noise
 Thumbs.db
 .DS_Store
+## local publish/run output
+_run/
+publish-output/
+*.binlog
+_run/
