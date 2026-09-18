@@ -24,6 +24,9 @@ public partial class EntryDetailsViewModel : ViewModelBase
     {
         _entry = entry;
         IsCard = EntryKinds.IsCard(entry.Kind);
+        FolderLabel = string.IsNullOrEmpty(entry.FolderId)
+            ? string.Empty
+            : AppServices.Database.GetFolder(entry.FolderId)?.Name ?? string.Empty;
 
         if (payload is CardSecureData card)
         {
@@ -59,7 +62,10 @@ public partial class EntryDetailsViewModel : ViewModelBase
     public string Name => _entry.Name;
     public bool IsCard { get; }
     public string KindName => EntryKinds.DisplayName(_entry.Kind);
-    public string HeaderSubtitle => IsCard ? "Card details" : $"{KindName} details";
+    public string FolderLabel { get; }
+    public string HeaderSubtitle => IsCard
+        ? (FolderLabel.Length > 0 ? $"Card details \u00B7 {FolderLabel}" : "Card details")
+        : (FolderLabel.Length > 0 ? $"{KindName} details \u00B7 {FolderLabel}" : $"{KindName} details");
     public StreamGeometry Icon => EntryTileViewModel.GetIcon(_entry.Kind);
 
     public string BrandLabel { get; } = string.Empty;

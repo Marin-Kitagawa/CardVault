@@ -14,8 +14,13 @@ namespace CardVault.ViewModels;
 public partial class HomeViewModel : ViewModelBase
 {
     private readonly List<EntryTileViewModel> _all = new();
+    private List<Folder> _folders = new();
+    private readonly HashSet<string> _expanded = new();
+    private Dictionary<string, List<Folder>> _children = new();
+    private List<string> _descendants = new();
 
     public ObservableCollection<EntryTileViewModel> Entries { get; } = new();
+    public ObservableCollection<FolderNodeViewModel> FolderTree { get; } = new();
 
     [ObservableProperty]
     private string subtitleText = "Your encrypted wallet";
@@ -23,13 +28,16 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty]
     private string searchText = string.Empty;
 
+    [ObservableProperty]
+    private string selectedFolderId = string.Empty;
+
     public string Subtitle => SubtitleText;
 
     public bool ShowEmpty => Entries.Count == 0;
     public bool HasItems => _all.Count > 0;
     public string EmptyTitle => HasItems ? "No matches" : "No entries yet";
     public string EmptyBlurb => HasItems
-        ? "Try a different search — nothing matched."
+        ? "Try a different search - nothing matched."
         : "Everything stays encrypted with your master password.";
     public string AddButtonLabel => HasItems ? "Add an entry" : "Add your first entry";
 
@@ -39,6 +47,12 @@ public partial class HomeViewModel : ViewModelBase
         Entries.Clear();
 
         if (!AppServices.Session.IsUnlocked) return;
+
+        _folders = AppServices.Database.ListFolders();
+        _children = BuildChildren(_folders);
+        _descendants = SelectedFolderId.Length == 0
+            ? new List<string>()
+            : FolderHelpers.Descendants(_folders, SelectedFolderId).ToList();
 
         foreach (var entry in AppServices.Database.ListEntries())
             _all.Add(new EntryTileViewModel(entry, OpenEntry));
@@ -50,6 +64,14 @@ public partial class HomeViewModel : ViewModelBase
                 ? "1 item secured"
                 : $"{count} items secured";
 
+        if (SelectedFolderId.Length > 0)
+        {
+            var folder = _folders.FirstOrDefault(f => f.Id == SelectedFolderId);
+            if (folder is not null)
+                SubtitleText = $"Showing {_descendants.Count + 1} folder(s) - {folder.Name}";
+        }
+
+        RebuildFolderTree();
         ApplyFilter();
 
         OnPropertyChanged(nameof(HasItems));
@@ -57,20 +79,32 @@ public partial class HomeViewModel : ViewModelBase
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
+    partial void OnSelectedFolderIdChanged(string value)
+    {
+        _descendants = value.Length == 0
+            ? new List<string>()
+            : FolderHelpers.Descendants(_folders, value).ToList();
+        ApplyFilter();
+        UpdateFolderSelection();
+    }
+
     private void ApplyFilter()
     {
         Entries.Clear();
 
         var query = SearchText.Trim();
-        if (query.Length == 0)
-        {
-            foreach (var tile in _all) Entries.Add(tile);
-        }
-        else
-        {
-            foreach (var tile in _all.Where(Match))
-                Entries.Add(tile);
-        }
+        var folderScoped = SelectedFolderId.Length > 0;
+        var scope = new HashSet<string>(_descendants) { SelectedFolderId };
+
+        IEnumerable<EntryTileViewModel> source = _all;
+        if (folderScoped)
+            source = source.Where(t => scope.Contains(t.FolderId));
+
+        if (query.Length > 0)
+            source = source.Where(Match);
+
+        foreach (var tile in source)
+            Entries.Add(tile);
 
         OnPropertyChanged(nameof(ShowEmpty));
         OnPropertyChanged(nameof(EmptyTitle));
@@ -86,6 +120,123 @@ public partial class HomeViewModel : ViewModelBase
             || tile.BrandLabel.Contains(q, StringComparison.OrdinalIgnoreCase)
             || tile.Tags.Contains(q, StringComparison.OrdinalIgnoreCase);
     }
+
+    // ============================= folder tree =============================
+
+    private static Dictionary<string, List<Folder>> BuildChildren(List<Folder> folders)
+    {
+        var map = new Dictionary<string, List<Folder>>();
+        foreach (var folder in folders)
+        {
+            if (!map.TryGetValue(folder.ParentId, out var list))
+                map[folder.ParentId] = list = new List<Folder>();
+            list.Add(folder);
+        }
+        return map;
+    }
+
+    private Dictionary<string, int> SubtreeCounts()
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (var folder in _folders)
+        {
+            var n = AppServices.Database.ListEntriesByFolder(folder.Id).Count;
+            var subtree = FolderHelpers.Descendants(_folders, folder.Id);
+            foreach (var sub in subtree)
+                n += AppServices.Database.ListEntriesByFolder(sub).Count;
+            counts[folder.Id] = n;
+        }
+        return counts;
+    }
+
+    private void RebuildFolderTree()
+    {
+        FolderTree.Clear();
+        var counts = SubtreeCounts();
+
+        void Add(Folder folder, int depth)
+        {
+            var isExpanded = folder.Id == SelectedFolderId || _expanded.Contains(folder.Id);
+            var hasChildren = _children.TryGetValue(folder.Id, out var kids) && kids.Count > 0;
+            FolderTree.Add(new FolderNodeViewModel(
+                folder, depth, hasChildren,
+                counts.TryGetValue(folder.Id, out var c) ? c : 0,
+                isExpanded, folder.Id == SelectedFolderId,
+                ToggleFolder, SelectFolder));
+        }
+
+        void Walk(string parentId, int depth)
+        {
+            if (!_children.TryGetValue(parentId, out var list)) return;
+            foreach (var folder in list)
+            {
+                Add(folder, depth);
+                if (_expanded.Contains(folder.Id) || folder.Id == SelectedFolderId)
+                    Walk(folder.Id, depth + 1);
+            }
+        }
+
+        Walk(string.Empty, 0);
+
+        if (FolderTree.Count == 0)
+        {
+            var emptyFolderRow = new FolderNodeViewModel(
+                new Folder { Id = string.Empty, Name = "No folders yet" }, 0, false, 0, false, false,
+                _ => { }, _ => { });
+            FolderTree.Add(emptyFolderRow);
+        }
+    }
+
+    private void ToggleFolder(FolderNodeViewModel node)
+    {
+        if (_expanded.Contains(node.Id))
+            _expanded.Remove(node.Id);
+        else
+            _expanded.Add(node.Id);
+        RebuildFolderTree();
+    }
+
+    private void SelectFolder(FolderNodeViewModel node)
+    {
+        if (node.Id.Length == 0) return;
+        SelectedFolderId = node.Id;
+        ApplyFilter();
+        UpdateFolderSelection();
+    }
+
+    private void UpdateFolderSelection()
+    {
+        foreach (var row in FolderTree)
+            row.SetSelected(row.Id == SelectedFolderId);
+    }
+
+    [RelayCommand]
+    private void ShowAll()
+    {
+        SelectedFolderId = string.Empty;
+        UpdateFolderSelection();
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void ManageFolders()
+    {
+        var vm = new FolderManagerViewModel();
+        var window = new FolderManagerWindow { DataContext = vm };
+        window.ShowDialog(AppServices.MainWindow);
+        Refresh();
+    }
+
+    [RelayCommand]
+    private void AddFolder()
+    {
+        var vm = new FolderEditorViewModel(parentId: SelectedFolderId);
+        var window = new FolderEditorWindow { DataContext = vm };
+        window.ShowDialog(AppServices.MainWindow);
+        Refresh();
+    }
+
+    // ============================= entries =============================
 
     [RelayCommand]
     private async Task AddEntry()

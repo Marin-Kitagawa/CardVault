@@ -21,6 +21,7 @@ public partial class EntryTileViewModel : ViewModelBase
         Id = entry.Id;
         Kind = entry.Kind;
         Name = entry.Name;
+        FolderId = entry.FolderId;
         IsCard = EntryKinds.IsCard(entry.Kind);
         Icon = GetIcon(entry.Kind);
         Tags = entry.Tags;
@@ -53,6 +54,7 @@ public partial class EntryTileViewModel : ViewModelBase
     public string Id { get; }
     public EntryKind Kind { get; }
     public string Name { get; }
+    public string FolderId { get; }
     public bool IsCard { get; }
     public string KindName => EntryKinds.DisplayName(Kind);
     public StreamGeometry Icon { get; }

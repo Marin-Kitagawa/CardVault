@@ -16,6 +16,7 @@ public sealed class VaultEntry
     public int Accent { get; set; } = -1;
     public byte[] SecureBlob { get; set; } = Array.Empty<byte>();
     public string Tags { get; set; } = string.Empty;
+    public string FolderId { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

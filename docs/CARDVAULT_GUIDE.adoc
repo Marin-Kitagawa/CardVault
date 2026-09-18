@@ -29,6 +29,8 @@ no personal information and is safe to distribute.
   revealed one at a time.
 * Live search across entry name, kind, brand, and tags.
 * Per-entry tags for grouping and quick filtering.
+* Nested folders with a built-in icon library for organising the vault into a
+  friendly, navigable tree.
 * Password-protected export/import for backups and machine transfers.
 * One-time CSV export for spreadsheets, plus CSV import.
 * Optional update check against the project's public release feed.
@@ -94,13 +96,61 @@ Clicking a tile opens the detail view; opening a card face reveals its digits.
 4. Optionally add tags (comma-separated) and notes.
 5. Save. The entry is sealed and inserted.
 
-=== 3.4. Revealing secrets
+You can also assign the entry to a folder as you create or edit it, using the
+*Folder* picker in the form.
+
+=== 3.4. Folder picker
+
+The *Folder* field on the add/edit form places an entry inside an existing
+folder. The list is indented to show nesting; choosing "No folder" stores the
+entry at the top of your library.
+
+== 5. Folders
+
+Folders group entries into a nested tree with a per-folder icon.
+
+=== 5.1. Creating a folder
+
+From the home sidebar press the folder **+** button (or *Manage folders* → *New
+folder*). Give it a name, choose where it lives (*Inside*), and pick an icon from
+the library. Folders can be nested arbitrarily deep.
+
+=== 5.2. The sidebar tree
+
+The home screen shows All items plus your folder tree on the left. Selecting a
+folder filters the wallet to that folder *and everything inside it* (its whole
+subtree); use the chevrons to expand and collapse branches. The count badge
+beside each folder shows how many entries live in it (including subfolders).
+
+=== 5.3. Managing folders
+
+*Manage folders* lists the whole tree with edit (rename / re-parent / change
+icon) and delete on every row. Deleting a folder is safe by design: its
+subfolders and entries are *moved one level up* (into the deleted folder's
+parent, or the top level for root folders). Nothing is ever deleted with a
+folder, and entries only ever end up at the same access path or higher.
+
+=== 5.4. The icon library
+
+Each folder stores a small `icon` key. The editor renders the library as
+selectable glyphs grouped by category (folders, essentials, people, security,
+finance, home, shopping, travel, media, productivity, communication,
+technology, lifestyle). Icons are vector stroke paths drawn at runtime, so they
+stay crisp in every theme and size.
+
+=== 5.5. Where folder data lives
+
+Folder names and icons are metadata (not secret) and are stored in the
+`folders` table alongside a `folder_id` column on each entry. The encrypted
+`secure` blob is untouched.
+
+=== 3.5. Revealing secrets
 
 Sensitive values stay masked. Use the per-item reveal control to temporarily
 show a value, and copy it only while revealed. Revelations never persist —
 closing the entry re-masks everything.
 
-== 4. Entry kinds
+== 6. Entry kinds
 
 Each kind has its own template. A `kind` string in the database drives the
 editor, the tile, and the detail view. The table lists the fields that are
@@ -126,7 +176,7 @@ stored in the encrypted payload.
 Cards additionally carry brand information (e.g. `visa`, `amex`, `mastercard`,
 custom) and an accent color used for the card-face gradient and digit display.
 
-== 5. Tags & search
+== 7. Tags & search
 
 * *Tags* are comma-separated labels on each entry (e.g. `travel,rewards`).
 * The search box filters live as you type, matching name, kind, brand, and
@@ -134,9 +184,9 @@ custom) and an accent color used for the card-face gradient and digit display.
 * Tags are stored as plaintext columns in the local database (they are not
   secret), so they can be indexed for fast filtering.
 
-== 6. Security model
+== 8. Security model
 
-=== 6.1. Encryption at rest
+=== 8.1. Encryption at rest
 
 * *Cipher*: AES-256-GCM (authenticated encryption).
 * *Key derivation*: PBKDF2-SHA256 with a random per-vault salt and a high
@@ -146,21 +196,21 @@ custom) and an accent color used for the card-face gradient and digit display.
   ciphertext`. The nonce is 12 bytes, the GCM tag 16 bytes.
 * The master password is never stored — only a derived verification hash.
 
-=== 6.2. Reveal discipline
+=== 8.2. Reveal discipline
 
 Nothing sensitive is visible until you ask. Copy-to-clipboard is gated behind
 reveal, and details windows are one-at-a-time dialogs so secrets don't linger
 on screen.
 
-=== 6.3. Backup
+=== 8.3. Backup
 
 Use *Export → .{ext} file* to produce an encrypted backup that preserves all
 kinds, names, tags, and encrypted payloads. Keep backups in a location you
 trust and remember the passphrase — there is no recovery without it.
 
-== 7. Export & import
+== 9. Export & import
 
-=== 7.1. Encrypted export/import
+=== 9.1. Encrypted export/import
 
 The `.cvault` format is a compressed envelope of the vault entries and their
 encrypted payloads, sealed with a passphrase using the same key derivation as
@@ -174,19 +224,19 @@ the vault.
 
 Round-trips all ten kinds plus tags and names.
 
-=== 7.2. CSV export
+=== 9.2. CSV export
 
 CSV export produces a UTF-8 file with a byte order mark, containing one row
 per entry: kind, name, tags, and revealed field/secret labels and values.
 Use for spreadsheets when you accept plaintext output. The first three bytes
 are `EF BB BF` so Excel detects UTF-8.
 
-=== 7.3. CSV import
+=== 9.3. CSV import
 
 CSV import reads the same format back in, mapping each column to an entry and
 encrypting the values before storage.
 
-== 8. Settings
+== 10. Settings
 
 * *Change master password*: requires the current password; re-encrypts every
   entry under the new derived key.
@@ -196,52 +246,59 @@ encrypting the values before storage.
 * *Update check*: optional, checks the public release feed. It is the only
   network call the app makes.
 
-== 9. How CardVault works under the hood
+== 11. How CardVault works under the hood
 
-=== 9.1. Storage
+=== 11.1. Storage
 
 The vault is a single SQLite database file located in the per-user
-application-data directory. Two core tables:
+application-data directory. Three core tables:
 
 * `meta` — key/value store: `kdf_salt`, `kdf_iter`, `master_hash`, `version`,
   plus application metadata such as theme and lock timeout.
 * `entries` — one row per entry: `id`, `kind`, `name`, `brand`, `accent`,
-  `tags`, `secure` (the encrypted `nonce|tag|ciphertext` blob), `created_at`,
-  `updated_at`.
+  `tags`, `folder_id`, `secure` (the encrypted `nonce|tag|ciphertext` blob),
+  `created_at`, `updated_at`.
+* `folders` — one row per folder: `id`, `parent_id`, `name`, `icon`,
+  `created_at`, `updated_at`. An empty `parent_id` means top level; an empty
+  `folder_id` on an entry means no folder.
 
-=== 9.2. Migration
+=== 11.2. Migration
 
 Opening a database created by an older schema detects and migrates it:
 
 * A legacy `cards` table is migrated into the unified `entries` table with
   `kind = 'card'`.
-* Missing columns (e.g. `tags`) are added to existing entries tables so old
-  vaults keep working without data loss.
+* Missing columns (e.g. `tags`, `folder_id`) are added to existing entries
+  tables so old vaults keep working without data loss.
 
 There is no plaintext in either table — the `secure` blob stays opaque.
 
-=== 9.3. Key derivation & master verification
+=== 11.3. Key derivation & master verification
 
 `DeriveKey(passphrase, salt, iterations)` = PBKDF2-SHA256. The derived key
 unlocks/encrypts entries; a separate derived value stored in `master_hash`
 verifies the passphrase without storing it. On change, all `secure` blobs are
 re-sealed with the new key.
 
-== 10. Command summary
+== 12. Command summary
 
 |===
 | Action | Entry or UI
 | Add entry | primary + button → picker → form
+| Place in a folder | entry form → Folder picker
+| Browse folders | sidebar tree (or Manage folders)
+| New folder | sidebar + / Manage folders → New folder
+| Delete a folder | Manage folders → Delete (contents move up)
 | Reveal a secret | per-item reveal control
 | Copy a revealed secret | copy button (only while revealed)
-| Filter | search box (name/kind/brand/tags)
+| Filter | search box (name/kind/brand/tags) or folder scope
 | Back up | Export → .cvault (encrypted)
 | Spreadsheet | Export → CSV (plaintext)
 | Change password | Settings → Security
 | Lock now / auto-lock | lock control / Settings timeout
 |===
 
-== 11. Troubleshooting
+== 13. Troubleshooting
 
 *Forgot the master password?* There is no recovery path by design. Use a
 current backup.
@@ -250,10 +307,11 @@ files error out and are left untouched.
 *CSV looks mangled in Excel?* The export writes UTF-8 with BOM; if your
 environment shows mojibake, re-import via the app's CSV importer instead.
 
-== 12. Roadmap
+== 14. Roadmap
 
 * Native auto-backup scheduling.
 * Browser-style entry templates for more identity documents.
+* Drag-and-drop re-parenting in the folder manager.
 * Cross-device sync (encrypted, opt-in) in a later release.
 
 == Appendix A: Format notes

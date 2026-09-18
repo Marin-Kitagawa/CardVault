@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="680"
+        x:DataType="vm:FolderManagerViewModel"
+        x:Class="CardVault.Views.FolderManagerWindow"
+        Title="Manage folders"
+        Width="560" Height="680" MinWidth="520" MinHeight="560"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <StackPanel Spacing="3">
+                <TextBlock Text="Manage folders" Classes="h2" />
+                <TextBlock Text="Group entries into nested, iconed folders." Classes="muted" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="tlink" Content="Done" Command="{Binding DoneCommand}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="26,16,26,18" RowDefinitions="Auto,*">
+            <Grid ColumnDefinitions="*,Auto">
+                <Button Classes="ghost" Content="New folder" Command="{Binding NewFolderCommand}"
+                        HorizontalAlignment="Left" />
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" Margin="0,12,0,0">
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="6" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FolderManagerRowViewModel">
+                            <Border Background="{DynamicResource BrushSurface}" CornerRadius="12"
+                                    BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                                    Padding="12,10" Margin="{Binding Indent}" Classes.selected="">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Width="36" Height="36" CornerRadius="10"
+                                            Background="{DynamicResource BrushSurfaceHigh}"
+                                            BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Data="{Binding Icon}" Stroke="{DynamicResource BrushAccent}"
+                                              StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                                              Fill="Transparent" Width="18" Height="18" Stretch="Uniform" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                        <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding CountText, StringFormat={}{0} item(s)}"
+                                                   Classes="faint" FontSize="11.5" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                                                VerticalAlignment="Center">
+                                        <Button Classes="ghost" Content="Edit" Command="{Binding EditCommand}" />
+                                        <Button Classes="ghost" Content="Delete" Command="{Binding DeleteCommand}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <TextBlock Grid.Row="2" Classes="faint" Margin="26,0,26,22" TextWrapping="Wrap"
+                   Text="Deleting a folder moves its subfolders and entries one level up. Nothing is ever deleted with it." />
+    </Grid>
+</Window>

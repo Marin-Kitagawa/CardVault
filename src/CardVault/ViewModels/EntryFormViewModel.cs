@@ -33,6 +33,7 @@ public partial class EntryFormViewModel : ViewModelBase
     [ObservableProperty] private string notes = string.Empty;
     [ObservableProperty] private string tagsText = string.Empty;
     [ObservableProperty] private int selectedSwatch;
+    [ObservableProperty] private FolderOptionViewModel? selectedFolder;
 
     [ObservableProperty] private string numberHint = "Enter the digits printed on the card";
     [ObservableProperty] private bool numberOkay;
@@ -49,6 +50,7 @@ public partial class EntryFormViewModel : ViewModelBase
     public ObservableCollection<SwatchViewModel> Swatches { get; } = new();
     public ObservableCollection<EntryFieldRowViewModel> TemplateFields { get; } = new();
     public ObservableCollection<SecretEntryViewModel> SecretEntries { get; } = new();
+    public ObservableCollection<FolderOptionViewModel> Folders { get; } = new();
 
     public EntryKind Kind { get; }
     public bool IsCard => EntryKinds.IsCard(Kind);
@@ -101,6 +103,12 @@ public partial class EntryFormViewModel : ViewModelBase
 
         SelectedSwatch = existing is not null ? Math.Clamp(existing.Accent + 1, 0, 8) : 0;
         TagsText = existing is not null ? DisplayTags(existing.Tags) : string.Empty;
+        foreach (var fo in FolderOptionBuilder.Flatten(
+                     AppServices.Database.ListFolders(),
+                     noneLabel: "No folder"))
+            Folders.Add(fo);
+        SelectedFolder = Folders.FirstOrDefault(f => f.Id == (existing?.FolderId ?? string.Empty))
+            ?? Folders.FirstOrDefault();
 
         foreach (var def in kind == EntryKind.Card
                      ? Array.Empty<EntryFieldDef>()
@@ -190,6 +198,8 @@ public partial class EntryFormViewModel : ViewModelBase
 
     private void Recompute()
     {
+        UpdatePreviewColor();
+
         if (!IsCard) { RecomputeCanSaveOnly(); return; }
 
         var digits = NumberDigits;
@@ -201,8 +211,6 @@ public partial class EntryFormViewModel : ViewModelBase
             _brandLabel = label;
             OnPropertyChanged(nameof(BrandLabel));
         }
-
-        UpdatePreviewColor();
 
         var state = CardBrandInfo.NumberState(digits);
         NumberHint = digits.Length == 0 ? "Enter the digits printed on the card" : state.message;
@@ -374,10 +382,13 @@ public partial class EntryFormViewModel : ViewModelBase
 
             if (_existing is null)
             {
-                AppServices.Database.InsertEntry(AppServices.Database.CreateCard(CardName.Trim(), brand, accent, data, tags));
+                var entry = AppServices.Database.CreateCard(CardName.Trim(), brand, accent, data, tags);
+                entry.FolderId = SelectedFolder?.Id ?? string.Empty;
+                AppServices.Database.InsertEntry(entry);
             }
             else
             {
+                _existing.FolderId = SelectedFolder?.Id ?? string.Empty;
                 AppServices.Database.UpdateCard(_existing, CardName.Trim(), brand, accent, data, tags);
             }
         }
@@ -397,10 +408,13 @@ public partial class EntryFormViewModel : ViewModelBase
             var tags = NormalizeTags(TagsText);
             if (_existing is null)
             {
-                AppServices.Database.InsertEntry(AppServices.Database.CreateEntry(CardName.Trim(), Kind, accent, data, tags));
+                var entry = AppServices.Database.CreateEntry(CardName.Trim(), Kind, accent, data, tags);
+                entry.FolderId = SelectedFolder?.Id ?? string.Empty;
+                AppServices.Database.InsertEntry(entry);
             }
             else
             {
+                _existing.FolderId = SelectedFolder?.Id ?? string.Empty;
                 AppServices.Database.UpdateEntryData(_existing, CardName.Trim(), Kind, accent, data, tags);
             }
         }

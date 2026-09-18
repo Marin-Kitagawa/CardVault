@@ -1,0 +1,96 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="720"
+        x:DataType="vm:FolderEditorViewModel"
+        x:Class="CardVault.Views.FolderEditorWindow"
+        Title="{Binding Title}"
+        Width="560" Height="720" MinWidth="520" MinHeight="600"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <TextBlock Text="{Binding Title}" Classes="h2" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="tlink" Content="Cancel" Command="{Binding CancelCommand}" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="26,16,26,0">
+            <StackPanel Spacing="22">
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Name" Classes="eyebrow" />
+                    <TextBox Classes="tcard" Watermark="e.g. Banking, Travel, 2026 tax"
+                             Text="{Binding FolderName, Mode=TwoWay}" MaxLength="60"
+                             x:Name="NameBox" />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Inside" Classes="eyebrow" />
+                    <ComboBox ItemsSource="{Binding ParentOptions}"
+                              SelectedItem="{Binding SelectedParent, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FolderOptionViewModel">
+                                <TextBlock Text="{Binding Label}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Classes="faint"
+                               Text="Nest this folder inside another one to organise entries into a tree." />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Icon" Classes="eyebrow" />
+                    <TextBlock Classes="faint"
+                               Text="Pick from the icon library. Folders keep their icon when re-coloured or moved." />
+                    <ItemsControl ItemsSource="{Binding Icons}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FolderIconPickViewModel">
+                                <Button Classes="swchip" Command="{Binding SelectCommand}" Margin="0,0,10,10"
+                                        ToolTip.Tip="{Binding Name, StringFormat={}{0}}">
+                                    <StackPanel Spacing="5">
+                                        <Border Width="64" Height="64" CornerRadius="14"
+                                                Background="{DynamicResource BrushSurfaceHigh}"
+                                                Classes.selected="{Binding IsSelected}">
+                                            <Border.Styles>
+                                                <Style Selector="Border">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </Style>
+                                                <Style Selector="Border.selected">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+                                                    <Setter Property="BorderThickness" Value="2" />
+                                                </Style>
+                                            </Border.Styles>
+                                            <Path Data="{Binding Icon}"
+                                                  Stroke="{DynamicResource BrushTextMuted}" StrokeThickness="1.7"
+                                                  StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                  Width="28" Height="28" Stretch="Uniform" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" Classes="faint" FontSize="10.5"
+                                                   HorizontalAlignment="Center" MaxWidth="72"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="26,16,26,22">
+            <Button Grid.Column="1" Classes="tprimary" Content="{Binding SaveLabel}"
+                    Command="{Binding SaveCommand}" />
+        </Grid>
+    </Grid>
+</Window>

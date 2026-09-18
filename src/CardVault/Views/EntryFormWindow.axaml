@@ -179,6 +179,20 @@
                 </StackPanel>
 
                 <StackPanel Spacing="8">
+                    <TextBlock Text="Folder" Classes="eyebrow" />
+                    <ComboBox ItemsSource="{Binding Folders}"
+                              SelectedItem="{Binding SelectedFolder, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FolderOptionViewModel">
+                                <TextBlock Text="{Binding Label}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Classes="faint"
+                               Text="Optional. Organise this entry inside a folder from your library." />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
                     <TextBlock Text="Secret entries" Classes="eyebrow" />
                     <TextBlock Classes="faint"
                                Text="Optional. Extra key–value details — recovery codes, security questions, PINs — stored inside the encrypted payload." />
