@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="430"
+        x:Class="CardVault.Views.PassphraseWindow"
+        x:Name="Root"
+        Title="CardVault"
+        Width="430" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" CanResize="False" ShowInTaskbar="False">
+
+    <StackPanel Margin="26,24,26,24" Spacing="16">
+        <TextBlock Classes="h2" TextWrapping="Wrap"
+                   Text="{Binding Title, ElementName=Root}" />
+        <TextBlock x:Name="SubtitleText" FontSize="13.5" Foreground="{DynamicResource BrushTextMuted}"
+                   TextWrapping="Wrap" LineHeight="19" />
+
+        <StackPanel Spacing="6">
+            <TextBlock Text="Passphrase" Classes="eyebrow" />
+            <TextBox x:Name="EntryPassword" Classes="tcard" Watermark="At least 8 characters" PasswordChar="●" />
+        </StackPanel>
+
+        <StackPanel x:Name="ConfirmSection" Spacing="6">
+            <TextBlock Text="Confirm passphrase" Classes="eyebrow" />
+            <TextBox x:Name="EntryConfirm" Classes="tcard" Watermark="Repeat the passphrase" PasswordChar="●" />
+        </StackPanel>
+
+        <Border x:Name="ErrorPanel" IsVisible="False" Background="{DynamicResource BrushDangerSoft}"
+                CornerRadius="10" Padding="12,10">
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource BrushDanger}" FontSize="13" TextWrapping="Wrap" />
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" Classes="ghost" Content="Cancel" />
+            <Button x:Name="OkButton" Classes="tprimary" Content="Continue" />
+        </StackPanel>
+    </StackPanel>
+</Window>

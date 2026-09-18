@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CardVault.ViewModels"
+             xmlns:views="clr-namespace:CardVault.Views"
+             mc:Ignorable="d" d:DesignWidth="1080" d:DesignHeight="720"
+             x:DataType="vm:HomeViewModel"
+             x:Class="CardVault.Views.HomeView">
+
+    <Grid Background="{DynamicResource BrushAppBg}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- header -->
+        <Grid ColumnDefinitions="*,Auto" Margin="30,26,30,12">
+            <StackPanel Spacing="3">
+                <TextBlock Text="CardVault" FontFamily="{DynamicResource FontDisplay}" FontSize="28" FontWeight="Bold" />
+                <TextBlock Text="{Binding Subtitle}" Classes="muted" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Button Classes="ghost" Command="{Binding LockCommand}" Content="Lock" />
+                <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" Content="Settings" />
+            </StackPanel>
+        </Grid>
+
+        <!-- wallet -->
+        <ScrollViewer Grid.Row="1" Margin="22,8,22,96">
+            <ItemsControl ItemsSource="{Binding Entries}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EntryTileViewModel">
+                        <Button Classes="tcardtile" Command="{Binding OpenCommand}" Margin="11">
+                            <Grid>
+
+                                <!-- card tile -->
+                                <views:CardFaceView Width="300" Height="189" IsVisible="{Binding IsCard}"
+                                                    CardNameText="{Binding Name}"
+                                                    BrandText="{Binding BrandLabel}"
+                                                    ColorStart="{Binding ColorStart}"
+                                                    ColorEnd="{Binding ColorEnd}" />
+
+                                <!-- generic pocket tile -->
+                                <Border Width="300" Height="189" CornerRadius="22"
+                                        Background="{DynamicResource BrushSurface}"
+                                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                                        IsVisible="{Binding IsCard, Converter={StaticResource InverseBool}}">
+                                    <Grid Margin="22,18" RowDefinitions="Auto,*,Auto">
+                                        <TextBlock Grid.Row="0" Text="{Binding KindName}" Classes="eyebrow"
+                                                   Foreground="{DynamicResource BrushAccent}" />
+                                        <Border Grid.Row="1" Width="56" Height="56" CornerRadius="28"
+                                                Background="{DynamicResource BrushSurfaceHigh}"
+                                                BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Path Data="{Binding Icon}" Stroke="{DynamicResource BrushAccent}"
+                                                  StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                                                  Fill="Transparent" Width="26" Height="26" Stretch="Uniform" />
+                                        </Border>
+                                        <StackPanel Grid.Row="2" Spacing="3">
+                                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="••••  ••••  ••••  ••••" Classes="muted" FontSize="12"
+                                                       Opacity="0.7" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- empty state -->
+        <StackPanel Grid.Row="1" IsVisible="{Binding ShowEmpty}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Spacing="12" Margin="0,0,0,50">
+            <Border Width="92" Height="92" CornerRadius="46"
+                    Background="{DynamicResource BrushSurfaceAlt}" HorizontalAlignment="Center">
+                <Path Data="M18 8h1a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4v-8a4 4 0 0 1 4-4h1 M6 8V7a6 6 0 0 1 12 0v1 M12 11v5"
+                      Stroke="{DynamicResource BrushAccent}" StrokeThickness="2"
+                      StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                      Width="60" Height="60" Stretch="Uniform" Margin="16,16,16,16" />
+            </Border>
+            <TextBlock Text="No entries yet" Classes="h2" HorizontalAlignment="Center" />
+            <TextBlock Text="Store cards, logins, accounts, identities, notes —" 
+                       Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="everything stays encrypted with your master password."
+                       Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                       Margin="0,0,0,10" />
+            <Button Classes="tprimary" Content="Add your first entry" Command="{Binding AddEntryCommand}"
+                    HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- add button -->
+        <Button Grid.Row="1" Classes="fab"
+                Command="{Binding AddEntryCommand}"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,30,30">
+            <Path Data="M5 12h14 M12 5v14"
+                  Stroke="{DynamicResource BrushOnAccent}" StrokeThickness="2.4"
+                  StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                  Width="28" Height="28" Stretch="Uniform" />
+        </Button>
+    </Grid>
+</UserControl>

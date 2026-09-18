@@ -1,0 +1,203 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        xmlns:views="clr-namespace:CardVault.Views"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="660"
+        x:DataType="vm:EntryDetailsViewModel"
+        x:Class="CardVault.Views.EntryDetailsWindow"
+        Title="{Binding Name}"
+        Width="480" Height="660" MinWidth="440" MinHeight="600"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <StackPanel Spacing="3">
+                <TextBlock Text="{Binding Name}" Classes="h2" TextTrimming="CharacterEllipsis" />
+                <TextBlock Classes="muted" Text="{Binding HeaderSubtitle}" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="tlink" Content="Done" Command="{Binding DoneCommand}" VerticalAlignment="Center" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="26,16,26,18">
+            <StackPanel Spacing="18">
+
+                <!-- card kind -->
+                <StackPanel Spacing="18" IsVisible="{Binding IsCard}">
+
+                    <views:CardFaceView Height="198" Width="314" HorizontalAlignment="Left"
+                                        CardNameText="{Binding Name}"
+                                        HolderText=""
+                                        NumberText="{Binding NumberShown}"
+                                        ExpiryText="{Binding ExpiryShown}"
+                                        BrandText="{Binding BrandLabel}"
+                                        ColorStart="{Binding ColorStart}"
+                                        ColorEnd="{Binding ColorEnd}"
+                                        ShowContactless="True" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding RevealStatus}" Classes="faint" VerticalAlignment="Center"
+                                   TextWrapping="Wrap" Margin="0,0,14,0" />
+                        <Button Grid.Column="1" Classes="ghost" Content="{Binding RevealLabel}"
+                                Command="{Binding ToggleRevealCommand}" />
+                    </Grid>
+
+                    <Border IsVisible="{Binding Revealed}"
+                            Background="{DynamicResource BrushAccentSoft}" CornerRadius="12" Padding="14,11">
+                        <TextBlock Text="Sensitive details are now visible on screen. Hide them when you are done."
+                                   Foreground="{DynamicResource BrushText}" FontSize="12.5" TextWrapping="Wrap" />
+                    </Border>
+
+                    <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                            BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                        <Grid RowDefinitions="Auto,1,Auto,1,Auto,1,Auto">
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="Cardholder name" Classes="faint" />
+                                    <TextBlock Text="{Binding HolderShown}" FontSize="15" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Classes="tlink" Content="Copy"
+                                        Command="{Binding CopyHolderCommand}" VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Rectangle Grid.Row="1" Height="1" Fill="{DynamicResource BrushStrokeSoft}" Margin="0,11" />
+
+                            <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="Card number" Classes="faint" />
+                                    <TextBlock Text="{Binding NumberShown}" FontSize="16" FontWeight="SemiBold"
+                                               LetterSpacing="1" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Classes="tlink" Content="Copy"
+                                        Command="{Binding CopyNumberCommand}" VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Rectangle Grid.Row="3" Height="1" Fill="{DynamicResource BrushStrokeSoft}" Margin="0,11" />
+
+                            <Grid Grid.Row="4" ColumnDefinitions="*,*,Auto">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="Expiry" Classes="faint" />
+                                    <TextBlock Text="{Binding ExpiryShown}" FontSize="15" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="Security code" Classes="faint" />
+                                    <TextBlock Text="{Binding CvvShown}" FontSize="15" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <Button Grid.Column="2" Classes="tlink" Content="Copy"
+                                        Command="{Binding CopyCvvCommand}" VerticalAlignment="Center" Margin="6,0" />
+                            </Grid>
+
+                            <Rectangle Grid.Row="5" Height="1" Fill="{DynamicResource BrushStrokeSoft}" Margin="0,11" />
+
+                            <StackPanel Grid.Row="6" Spacing="2">
+                                <TextBlock Text="Notes" Classes="faint" />
+                                <TextBlock Text="{Binding NotesDisplay}" FontSize="13.5"
+                                           Foreground="{DynamicResource BrushTextMuted}" TextWrapping="Wrap" LineHeight="19" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border IsVisible="{Binding HasSecrets}"
+                            Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                            BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Secret entries" Classes="muted" FontWeight="SemiBold" />
+                            <ItemsControl ItemsSource="{Binding SecretRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SecretRowViewModel">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <TextBlock Text="{Binding Name}" Classes="faint" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding ValueShown}" FontSize="15" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                                                        VerticalAlignment="Center">
+                                                <Button Classes="tlink" Content="{Binding RevealLabel}"
+                                                        Command="{Binding RevealCommand}" />
+                                                <Button Classes="ghost" Content="Copy" Command="{Binding CopyCommand}"
+                                                        IsVisible="{Binding Revealed}" Padding="10,5" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- generic kind -->
+                <Border IsVisible="{Binding IsCard, Converter={StaticResource InverseBool}}"
+                        Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="16">
+
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Width="46" Height="46" CornerRadius="23"
+                                    Background="{DynamicResource BrushSurfaceHigh}"
+                                    BorderBrush="{DynamicResource BrushAccent}" BorderThickness="1.5">
+                                <Path Data="{Binding Icon}" Stroke="{DynamicResource BrushAccent}"
+                                      StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                                      Fill="Transparent" Width="22" Height="22" Stretch="Uniform" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="14,0,0,0">
+                                <TextBlock Text="{Binding KindName}" Classes="eyebrow"
+                                           Foreground="{DynamicResource BrushAccent}" />
+                                <TextBlock Text="{Binding HeaderSubtitle}" Classes="muted" FontSize="12.5" />
+                            </StackPanel>
+                            <Border Grid.Column="2" CornerRadius="9" Padding="9,5"
+                                    Background="{DynamicResource BrushAccentSoft}" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding KindName}" FontSize="10" FontWeight="Bold" LetterSpacing="1.2"
+                                           Foreground="{DynamicResource BrushAccent}" />
+                            </Border>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding HasRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SecretRowViewModel">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock Text="{Binding Name}" Classes="faint" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding ValueShown}" FontSize="15" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                                                    VerticalAlignment="Center">
+                                            <Button Classes="tlink" Content="{Binding RevealLabel}"
+                                                    Command="{Binding RevealCommand}" />
+                                            <Button Classes="ghost" Content="Copy" Command="{Binding CopyCommand}"
+                                                    IsVisible="{Binding Revealed}" Padding="10,5" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border Height="1" Background="{DynamicResource BrushStrokeSoft}" />
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Notes" Classes="muted" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding NotesDisplay}" FontSize="13.5"
+                                       Foreground="{DynamicResource BrushTextMuted}" TextWrapping="Wrap" LineHeight="19" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="faint"
+                           Text="Copying a value is only available after you reveal it." />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="26,16,26,22">
+            <Button Grid.Column="0" Classes="ghost" Content="Edit" Command="{Binding EditCommand}" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                <Button Classes="danger" Content="Delete" Command="{Binding DeleteCommand}" />
+                <Button Classes="tprimary" Content="Done" Command="{Binding DoneCommand}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

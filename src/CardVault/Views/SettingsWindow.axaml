@@ -1,0 +1,129 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="720"
+        x:DataType="vm:SettingsViewModel"
+        x:Class="CardVault.Views.SettingsWindow"
+        Title="Settings"
+        Width="520" Height="720" MinWidth="480" MinHeight="560"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <TextBlock Text="Settings" Classes="h1" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="tlink" Content="Done" Command="{Binding DoneCommand}" VerticalAlignment="Center" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="26,16,26,20">
+            <StackPanel Spacing="16">
+
+                <!-- World -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="THEME" Classes="eyebrow" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap"
+                                   Text="The whole interface re-skins instantly. Your card data is unaffected." />
+                        <ComboBox ItemsSource="{Binding ThemeOptions}"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ThemeOption">
+                                    <StackPanel Spacing="2" Margin="0,2">
+                                        <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Blurb}" FontSize="11.5"
+                                                   Foreground="{DynamicResource BrushTextMuted}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- Session -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="SESSION" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Auto-lock" FontSize="14" />
+                                <TextBlock Classes="faint"
+                                           Text="Vault locks automatically after this much inactivity." TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="150" Margin="12,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{Binding LockOptions}"
+                                      SelectedItem="{Binding SelectedLock}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:LockOption">
+                                        <TextBlock Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                        <Button Classes="ghost" Content="Lock now" Command="{Binding LockNowCommand}"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Backups -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="BACKUPS" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <Button Classes="ghost" Content="Export encrypted backup…" HorizontalAlignment="Left"
+                                Command="{Binding ExportCommand}" />
+                        <Button Classes="ghost" Content="Import backup…" HorizontalAlignment="Left"
+                                Command="{Binding ImportCommand}" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap"
+                                   Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Master password -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="MASTER PASSWORD" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <TextBox Classes="tcard" Watermark="Current password" PasswordChar="●"
+                                     Text="{Binding OldPassword, Mode=TwoWay}" />
+                        <TextBox Classes="tcard" Watermark="New password (min. 8 characters)" PasswordChar="●"
+                                     Text="{Binding NewPassword, Mode=TwoWay}" />
+                        <TextBox Classes="tcard" Watermark="Confirm new password" PasswordChar="●"
+                                     Text="{Binding ConfirmPassword, Mode=TwoWay}" />
+                        <Button Classes="tprimary" Content="Update password" HorizontalAlignment="Left"
+                                Command="{Binding ChangePasswordCommand}" IsEnabled="{Binding IsIdle}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Security model -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="SECURITY MODEL" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
+                                   Text="• Every card is sealed with AES-256-GCM using a key derived from your master password (PBKDF2-HMAC-SHA256, 310,000 iterations)." />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
+                                   Text="• Card numbers, holder names, expiry, CVV and notes are never written to disk in plaintext — only the card label is stored as metadata in the local SQLite database." />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
+                                   Text="• The decrypted key lives only in memory and is zeroed the moment the vault locks." />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
+                                   Text="• This app performs no network access. Your data never leaves this machine." />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="26,14,26,22">
+            <Button Grid.Column="1" Classes="tprimary" Content="Done" Command="{Binding DoneCommand}" />
+        </Grid>
+    </Grid>
+</Window>

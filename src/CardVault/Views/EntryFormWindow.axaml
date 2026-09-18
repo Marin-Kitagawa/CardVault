@@ -1,0 +1,204 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        xmlns:views="clr-namespace:CardVault.Views"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="820"
+        x:DataType="vm:EntryFormViewModel"
+        x:Class="CardVault.Views.EntryFormWindow"
+        Title="{Binding WindowTitle}"
+        Width="480" Height="820" MinWidth="440" MinHeight="640"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <TextBlock Text="{Binding WindowTitle}" Classes="h2" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="tlink" Content="Cancel" Command="{Binding CancelCommand}" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="26,16,26,0">
+            <StackPanel Spacing="20">
+
+                <!-- preview: card face -->
+                <StackPanel Spacing="8" IsVisible="{Binding IsCard}">
+                    <views:CardFaceView Height="198" Width="314" HorizontalAlignment="Left"
+                                        CardNameText="{Binding CardName}"
+                                        HolderText="{Binding Holder}"
+                                        NumberText="{Binding Number}"
+                                        ExpiryText="{Binding Expiry}"
+                                        BrandText="{Binding BrandLabel}"
+                                        ColorStart="{Binding PreviewColorStart}"
+                                        ColorEnd="{Binding PreviewColorEnd}" />
+                    <TextBlock Classes="faint" Text="Live preview — formatting and validation update as you type." />
+                </StackPanel>
+
+                <!-- preview: generic pocket -->
+                <Border Width="314" Height="198" HorizontalAlignment="Left" CornerRadius="22"
+                        Background="{DynamicResource BrushSurface}"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                        IsVisible="{Binding IsCard, Converter={StaticResource InverseBool}}">
+                    <Grid Margin="24,20" ColumnDefinitions="Auto,*,Auto">
+                        <Border Width="52" Height="52" CornerRadius="26"
+                                Background="{DynamicResource BrushSurfaceHigh}"
+                                BorderBrush="{DynamicResource BrushAccent}" BorderThickness="1.5"
+                                VerticalAlignment="Top" Margin="0,0,2,0">
+                            <Path Data="{Binding Icon}" Stroke="{DynamicResource BrushAccent}"
+                                  StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                                  Fill="Transparent" Width="24" Height="24" Stretch="Uniform" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="3" Margin="14,2,0,0" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding KindName}" Classes="eyebrow"
+                                       Foreground="{DynamicResource BrushAccent}" />
+                            <TextBlock Text="{Binding CardName}" FontSize="16" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis" MaxWidth="150" />
+                            <TextBlock Text="••••  ••••  ••••  ••••" Classes="muted" FontSize="13"
+                                       Margin="0,6,0,0" />
+                        </StackPanel>
+                        <Border Grid.Column="2" CornerRadius="9" Padding="9,5"
+                                Background="{DynamicResource BrushAccentSoft}" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding KindName}" FontSize="10" FontWeight="Bold" LetterSpacing="1.2"
+                                       Foreground="{DynamicResource BrushAccent}" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Name" Classes="eyebrow" />
+                    <TextBox Classes="tcard" Watermark="e.g. Personal Visa"
+                             Text="{Binding CardName, Mode=TwoWay}" MaxLength="44" />
+                    <TextBlock Classes="faint"
+                               Text="Shown on the wallet home screen. Details stay hidden until you open the entry." />
+                </StackPanel>
+
+                <!-- card-only fields -->
+                <StackPanel Spacing="20" IsVisible="{Binding IsCard}">
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Name on the card" Classes="eyebrow" />
+                        <TextBox Classes="tcard" Watermark="As embossed on the card"
+                                 Text="{Binding Holder, Mode=TwoWay}" MaxLength="40" />
+                        <TextBlock Text="{Binding HolderHint}" FontSize="12" Foreground="{Binding HolderHintBrush}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Card number" Classes="eyebrow" />
+                        <TextBox Classes="tcard" Watermark="1234 5678 9012 3456"
+                                 Text="{Binding Number, Mode=TwoWay}" />
+                        <TextBlock Text="{Binding NumberHint}" FontSize="12" Foreground="{Binding NumberHintBrush}" />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,14,*">
+                        <StackPanel Grid.Column="0" Spacing="8">
+                            <TextBlock Text="Expiry (MM / YY)" Classes="eyebrow" />
+                            <TextBox Classes="tcard" Watermark="MM / YY"
+                                     Text="{Binding Expiry, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding ExpiryHint}" FontSize="12" Foreground="{Binding ExpiryHintBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="8">
+                            <TextBlock Text="Security code" Classes="eyebrow" />
+                            <TextBox Classes="tcard" Watermark="CVV"
+                                     Text="{Binding Cvv, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding CvvHint}" FontSize="12" Foreground="{Binding CvvHintBrush}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- kind template fields -->
+                <StackPanel Spacing="16" IsVisible="{Binding HasTemplateFields}">
+                    <ItemsControl ItemsSource="{Binding TemplateFields}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Spacing="16" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EntryFieldRowViewModel">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding Label}" Classes="eyebrow" />
+                                    <TextBox Classes="tcard" Watermark="{Binding Label}"
+                                             MaxLength="200" Text="{Binding Value, Mode=TwoWay}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Entry colour" Classes="eyebrow" />
+                    <ItemsControl ItemsSource="{Binding Swatches}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SwatchViewModel">
+                                <Button Classes="swchip" Command="{Binding SelectCommand}" Margin="2,0,8,8">
+                                    <Border Classes="swatch" Classes.selected="{Binding IsSelected}"
+                                            Background="{Binding FillBrush}">
+                                        <Border.Styles>
+                                            <Style Selector="Border.swatch">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+                                                <Setter Property="BorderThickness" Value="1" />
+                                            </Style>
+                                            <Style Selector="Border.swatch.selected">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+                                                <Setter Property="BorderThickness" Value="2" />
+                                            </Style>
+                                        </Border.Styles>
+                                        <Grid>
+                                            <Border CornerRadius="16" Background="#26000000" />
+                                            <TextBlock Text="{Binding Label}" FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="#F5FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       IsVisible="{Binding Label, Converter={StaticResource NonEmptyToVis}}" />
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Spacing="8" Margin="0,0,0,8">
+                    <TextBlock Text="Notes" Classes="eyebrow" />
+                    <TextBox Classes="tarea" AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="70" MaxHeight="120"
+                             Watermark="Anything you want to remember (optional)"
+                             Text="{Binding Notes, Mode=TwoWay}" />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Secret entries" Classes="eyebrow" />
+                    <TextBlock Classes="faint"
+                               Text="Optional. Extra key–value details — recovery codes, security questions, PINs — stored inside the encrypted payload." />
+                    <ItemsControl ItemsSource="{Binding SecretEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SecretEntryViewModel">
+                                <Grid ColumnDefinitions="*,10,*,Auto" Margin="0,0,0,4">
+                                    <TextBox Grid.Column="0" Classes="tcard" Watermark="e.g. Online PIN"
+                                             MaxLength="40" Text="{Binding Name, Mode=TwoWay}" />
+                                    <TextBox Grid.Column="2" Classes="tcard" Watermark="Sensitive value"
+                                             MaxLength="200" Text="{Binding Value, Mode=TwoWay}" />
+                                    <Button Grid.Column="3" Classes="tlink" Content="Remove"
+                                            Command="{Binding RemoveCommand}" VerticalAlignment="Center"
+                                            Margin="10,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Classes="ghost" Content="Add entry" Command="{Binding AddSecretEntryCommand}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="26,16,26,22">
+            <Button Grid.Column="2" Classes="tprimary" Content="{Binding SaveLabel}"
+                    Command="{Binding SaveCommand}" />
+        </Grid>
+    </Grid>
+</Window>

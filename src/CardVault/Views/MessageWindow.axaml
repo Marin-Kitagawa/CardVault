@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="410"
+        x:Class="CardVault.Views.MessageWindow"
+        x:Name="Root"
+        Title="CardVault"
+        Width="410" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" CanResize="False" ShowInTaskbar="False">
+
+    <StackPanel Margin="26,24,26,24" Spacing="18">
+        <TextBlock x:Name="TitleText" Classes="h2" TextWrapping="Wrap" />
+        <TextBlock x:Name="MessageText" FontSize="13.5"
+                   Foreground="{DynamicResource BrushTextMuted}" TextWrapping="Wrap" LineHeight="19" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" Classes="ghost" Content="Cancel" />
+            <Button x:Name="OkButton" Classes="tprimary" Content="OK" />
+        </StackPanel>
+    </StackPanel>
+</Window>

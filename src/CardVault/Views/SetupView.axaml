@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CardVault.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1080" d:DesignHeight="720"
+             x:DataType="vm:SetupViewModel"
+             x:Class="CardVault.Views.SetupView"
+             x:Name="Root">
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Enter" Command="{Binding SubmitCommand}" />
+    </UserControl.KeyBindings>
+
+    <Panel>
+        <!-- ambient background -->
+        <Ellipse Width="620" Height="620" HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-300,-320,0,0" IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Offset="0" Color="{DynamicResource GateGlowA}" />
+                    <GradientStop Offset="0.6" Color="{DynamicResource GateGlowB}" />
+                    <GradientStop Offset="1" Color="#00000000" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse Width="520" Height="520" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                 Margin="0,0,-260,-260" IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Offset="0" Color="{DynamicResource GateGlowB}" />
+                    <GradientStop Offset="1" Color="#00000000" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <StackPanel MaxWidth="424" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
+            <!-- gate clock -->
+            <TextBlock Text="{Binding ClockText}" Classes="clock" HorizontalAlignment="Center" />
+
+            <!-- lock emblem -->
+            <Border Width="86" Height="86" CornerRadius="43" HorizontalAlignment="Center">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="{DynamicResource BrandA}" />
+                        <GradientStop Offset="1" Color="{DynamicResource BrandB}" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Border BoxShadow="{DynamicResource ShadowFab}" CornerRadius="43" />
+                    <Grid Margin="18">
+                        <Path Data="M 5 11 h14 a2 2 0 0 1 2 2 v7 a2 2 0 0 1 -2 2 h-14 a2 2 0 0 1 -2 -2 v-7 a2 2 0 0 1 2 -2 Z M 7 11 V7 a5 5 0 0 1 10 0 v4"
+                              Stroke="#FFFFFF" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
+                              Fill="Transparent" Stretch="Uniform" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <StackPanel Spacing="8">
+                <TextBlock Text="{Binding Title}" Classes="h1" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Subtitle}" Classes="muted" HorizontalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center" LineHeight="19" />
+            </StackPanel>
+
+            <Border Background="{DynamicResource BrushSurface}" CornerRadius="18"
+                    BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1.5"
+                    Padding="22,20">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Master password" Classes="eyebrow" />
+                        <TextBox Classes="tcard" Watermark="At least 8 characters"
+                                     Text="{Binding Password, Mode=TwoWay}" PasswordChar="●"
+                                     IsEnabled="{Binding IsIdle}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6" IsVisible="{Binding ShowConfirm}">
+                        <TextBlock Text="Confirm password" Classes="eyebrow" />
+                        <TextBox Classes="tcard" Watermark="Repeat your password"
+                                     Text="{Binding Confirm, Mode=TwoWay}" PasswordChar="●"
+                                     IsEnabled="{Binding IsIdle}" />
+                    </StackPanel>
+
+                    <Border IsVisible="{Binding HasError}"
+                            Background="{DynamicResource BrushDangerSoft}" CornerRadius="10" Padding="12,10">
+                        <TextBlock Text="{Binding Error}" Foreground="{DynamicResource BrushDanger}"
+                                   FontSize="13" TextWrapping="Wrap" LineHeight="18" />
+                    </Border>
+
+                    <Button Classes="tprimary" Content="{Binding SubmitLabel}"
+                            Command="{Binding SubmitCommand}" IsEnabled="{Binding IsIdle}"
+                            HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Classes="faint" HorizontalAlignment="Center" TextAlignment="Center"
+                       TextWrapping="Wrap" LineHeight="18"
+                       Text="Your master password never leaves this device. Card data never touches the network." />
+        </StackPanel>
+    </Panel>
+</UserControl>

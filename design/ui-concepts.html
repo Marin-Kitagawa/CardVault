@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardVault — three design directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Seven+Segment&family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600&family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FRAME — a neutral exhibit for three committed worlds
+   ============================================================ */
+:root{
+  --frame-bg:#ECE9E2; --frame-ink:#23211C; --frame-ink-soft:#6E6A61;
+  --frame-line:#D4D0C7; --frame-card:#FBFAF7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--frame-bg); color:var(--frame-ink);
+  font-family:"Space Grotesk",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+/* masthead */
+.masthead{padding:64px 28px 34px}
+.masthead .kicker{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--frame-ink-soft);margin-bottom:18px}
+.masthead h1{font-size:clamp(30px,4vw,52px);font-weight:600;letter-spacing:-.03em;line-height:1.02;max-width:18ch}
+.masthead p{max-width:56ch;color:var(--frame-ink-soft);line-height:1.65;margin-top:16px;font-size:15px}
+.masthead .fine{margin-top:22px;font-size:12.5px;color:var(--frame-ink-soft)}
+
+/* segmented nav */
+.nav{position:sticky;top:0;z-index:50;background:rgba(236,233,226,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--frame-line)}
+.nav-inner{display:flex;gap:4px;padding:10px 0;align-items:center}
+.nav a{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:9px 16px;border-radius:999px;color:var(--frame-ink-soft);text-decoration:none;font-weight:500}
+.nav a:hover{color:var(--frame-ink)}
+.nav a.on{background:var(--frame-ink);color:var(--frame-bg)}
+
+/* world card */
+.world-card{background:var(--frame-card);border:1px solid var(--frame-line);border-radius:20px;margin:34px 0 64px;padding:50px 46px 56px;scroll-margin-top:70px}
+.world-head{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:42px;margin-bottom:44px}
+.world-title .num{font-size:13px;letter-spacing:.2em;color:var(--frame-ink-soft);margin-bottom:10px}
+.world-title h2{font-size:clamp(26px,3vw,40px);font-weight:600;letter-spacing:-.02em;line-height:1.03}
+.world-title p.thesis{margin-top:14px;font-size:14.5px;line-height:1.6;color:#45423B;max-width:52ch}
+.world-meta{display:grid;grid-template-columns:1fr;gap:14px;align-content:start;font-size:12.5px;color:var(--frame-ink-soft);line-height:1.5}
+.world-meta .m{display:flex;gap:8px}
+.world-meta .k{min-width:58px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--frame-ink-soft);padding-top:2px}
+.world-meta .v{color:#3A372F;font-size:13px}
+.world-meta .swatches{display:flex;gap:8px;margin-top:2px}
+.world-meta .sw{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.world-meta .risk{color:#7A5B2E}
+.world-meta code{font-family:"JetBrains Mono",monospace;font-size:11.5px}
+
+/* screen grid */
+.screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px}
+.screen{min-width:0}
+.screen .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--frame-ink-soft);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.screen .tag::after{content:"";height:1px;flex:1;background:var(--frame-line)}
+.stage{border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06),0 18px 40px -26px rgba(0,0,0,.35);position:relative}
+.screen .note{margin-top:10px;font-size:12px;line-height:1.55;color:var(--frame-ink-soft)}
+
+/* shared demo controls */
+.btnlike{font:inherit;border:none;cursor:pointer}
+.reveal-demo:checked ~ .hidden-part{ }
+.revealwrap{position:relative}
+.reveal-demo{position:absolute;opacity:0;pointer-events:none}
+.reveal-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;letter-spacing:.08em;color:inherit;text-transform:uppercase;background:none;border:none;cursor:pointer;font-family:inherit}
+.reveal-part{display:none}
+.reveal-demo:checked ~ .dat .reveal-part{display:block}
+.reveal-demo:checked ~ .dat .mask-part{display:none}
+.reveal-demo:checked + label .reveal-on{display:none}
+.reveal-demo:not(:checked) + label .reveal-off{display:none}
+
+/* footer */
+.footnote{border-top:1px solid var(--frame-line);padding:34px 0 80px;color:var(--frame-ink-soft);font-size:13px;line-height:1.7}
+.footnote strong{color:var(--frame-ink);font-weight:600}
+.footnote .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
+
+@media (max-width:980px){ .world-head{grid-template-columns:1fr;gap:24px}.footnote .row{grid-template-columns:1fr} .world-card{padding:36px 26px 42px} }
+
+/* ============================================================
+   WORLD A — READOUT  ·  seven-segment gallery
+   material: matte near-black, lit segments, ghost cells
+   ============================================================ */
+.world-readout{--g:#0A0B0D;--g2:#101116;--cell:#23252C;--ghost:#3A3E49;--red:#FF3B30;--amber:#FFB300;--green:#2FBF7F;--ink:#F2F3F7;--dim:#9AA1AF;--line:#1E2127}
+.world-readout .sw.sh1{background:#FF3B30}.world-readout .sw.sh2{background:#FFB300}.world-readout .sw.sh3{background:#2FBF7F}.world-readout .sw.sh4{background:#3A3E49}
+.world-readout .stage{background:var(--g);color:var(--ink)}
+.seg-font{font-family:"Seven Segment",ui-monospace,monospace;letter-spacing:.04em}
+.world-readout .stage{font-family:"Space Grotesk",system-ui,sans-serif}
+
+/* READOUT · locked gate */
+.ro-lock{display:flex;flex-direction:column;gap:16px;padding:34px 30px;min-height:400px;justify-content:center}
+.ro-clock{display:flex;align-items:baseline;gap:8px;justify-content:center;color:var(--red)}
+.ro-clock .big{font-family:"Seven Segment",monospace;font-size:52px;color:var(--ghost);text-shadow:0 0 18px rgba(255,59,48,.0)}
+.ro-clock .big.lit{color:var(--red);text-shadow:0 0 14px rgba(255,59,48,.55),0 0 40px rgba(255,59,48,.25)}
+.ro-clock .colon{font-family:"Seven Segment",monospace;font-size:48px;color:var(--red);text-shadow:0 0 14px rgba(255,59,48,.6);animation:blink 1.6s steps(1) infinite}
+@keyframes blink{50%{opacity:.18}}
+.ro-title{text-align:center;font-weight:600;font-size:17px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink)}
+.ro-sub{text-align:center;color:var(--dim);font-size:12px;line-height:1.6;max-width:34ch;margin:0 auto}
+.ro-key{display:flex;align-items:center;gap:10px;background:var(--g2);border:1px solid var(--line);border-radius:10px;padding:4px 14px;font-family:"JetBrains Mono",monospace;color:var(--ghost);font-size:13px;letter-spacing:.12em}
+.ro-key .kcell{font-family:"Seven Segment",monospace;font-size:20px;color:var(--red);min-width:16px;text-align:center}
+.ro-key .keep{padding-bottom:4px;animation:blink 1.1s steps(1) infinite}
+.ro-primary{background:var(--red);color:#1B0503;font-family:inherit;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:12px;padding:13px;border-radius:10px;text-align:center}
+.ro-foot{text-align:center;color:var(--dim);font-size:11px;line-height:1.6}
+
+/* READOUT · wallet */
+.ro-wallet{display:flex;flex-direction:column;min-height:430px;background:linear-gradient(180deg,var(--g2),var(--g))}
+.ro-top{display:flex;justify-content:space-between;align-items:center;padding:22px 24px 6px}
+.ro-brand{font-size:13px;letter-spacing:.34em;text-transform:uppercase;color:var(--dim)}
+.ro-count{color:var(--ghost);font-family:"Seven Segment",monospace;font-size:18px}
+.ro-acts{display:flex;gap:8px}
+.ro-act{border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:7px 11px;border-radius:8px}
+.ro-act.amber{color:var(--amber);border-color:rgba(255,179,0,.35)}
+.ro-slots{display:flex;flex-direction:column;gap:12px;padding:20px 24px 24px}
+.ro-slot{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;background:var(--g2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.ro-slot .mnum{font-family:"Seven Segment",monospace;font-size:14px;display:flex;gap:3px}
+.ro-slot .mnum i{width:10px;height:17px;display:inline-block;position:relative}
+.ro-slot .mnum i::before{content:"8";color:var(--ghost)}
+.ro-slot .meta{min-width:0}
+.ro-slot .nm{font-size:14.5px;font-weight:500;letter-spacing:.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ro-slot .br{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:3px}
+.ro-slot .puck{width:40px;height:40px;border-radius:11px;position:relative}
+.ro-slot .puck .led{position:absolute;inset:0;border-radius:11px}
+.ro-slot .puck .led.gh{background:var(--cell)}
+.ro-slot .puck .led.lv{opacity:.95}
+.ro-slot .puck .led.ok{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 0 16px rgba(255,59,48,.3)}
+.ro-puck{display:flex;align-items:center;justify-content:center}
+.ro-fab{position:absolute;right:30px;bottom:26px;width:52px;height:52px;border-radius:16px;background:var(--amber);color:#241A00;font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 26px -12px rgba(255,179,0,.5)}
+.ro-empty{padding:12px 26px 30px;color:var(--dim);font-size:11.5px;line-height:1.6}
+.ro-empty b{color:var(--ghost);font-weight:500}
+
+/* READOUT · details */
+.ro-detail{display:flex;flex-direction:column;gap:14px;padding:24px;min-height:430px}
+.ro-face{background:linear-gradient(135deg,#C9332B,#8F1F1A);border-radius:16px;padding:20px 22px;border:1px solid rgba(255,255,255,.06)}
+.ro-face .lbl{font-family:"Seven Segment",monospace;font-size:13px;color:rgba(255,255,255,.38);display:flex;justify-content:space-between;background:rgba(0,0,0,.18);border-radius:9px;padding:9px 12px}
+.ro-face .lbval{font-family:"Seven Segment",monospace;font-size:15px;color:#FFF3EA;text-shadow:0 0 12px rgba(255,255,255,.25)}
+.ro-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:11px 2px}
+.ro-row .k{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.ro-row .v{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);letter-spacing:.06em}
+.ro-copy{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--amber);background:none;border:none;cursor:pointer;text-transform:uppercase}
+.ro-ctlrow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px}
+.ro-btn{border:1px solid var(--line);background:var(--g2);color:var(--dim);font-family:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:10px 0;border-radius:9px}
+.ro-btn.red{color:var(--red);border-color:rgba(255,59,48,.4)}
+
+/* READOUT · form */
+.ro-form{display:flex;flex-direction:column;gap:12px;padding:24px;min-height:480px}
+.ro-field{display:flex;flex-direction:column;gap:5px}
+.ro-lab{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.ro-in{background:var(--g2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);letter-spacing:.05em}
+.ro-in.bad{border-color:rgba(255,59,48,.55)}
+.ro-in.good{border-color:rgba(47,191,127,.45)}
+.ro-hint{font-size:11px;line-height:1.5}
+.ro-hint.bad{color:var(--red)} .ro-hint.good{color:var(--green)} .ro-hint.idle{color:var(--dim)}
+.ro-down{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ro-swatches{display:flex;gap:10px;flex-wrap:wrap}
+.ro-swatch{width:34px;height:34px;border-radius:10px;border:2px solid transparent;padding:0;background:none}
+.ro-swatch.sel{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,179,0,.12)}
+.ro-swatch .core{width:100%;height:100%;border-radius:8px}
+.ro-send{background:var(--red);color:#1B0503;border:none;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:12px;padding:13px;border-radius:10px;font-family:inherit}
+
+/* READOUT · dialog */
+.ro-dialog{background:var(--g);padding:26px;display:flex;flex-direction:column;gap:18px;min-height:190px;border:1px solid var(--line);border-radius:14px}
+.ro-dialog h4{font-size:15px;font-weight:600;letter-spacing:.04em}
+.ro-dialog p{color:var(--dim);font-size:12.5px;line-height:1.65}
+.ro-dialog .row{display:flex;gap:10px;justify-content:flex-end}
+.ro-dialog .btn{border:1px solid var(--line);background:var(--g2);color:var(--dim);font-family:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:10px 16px;border-radius:9px}
+.ro-dialog .btn.red{background:var(--red);color:#1B0503;border-color:transparent;font-weight:700}
+
+/* ============================================================
+   WORLD B — MACHINE ROOM  ·  normalled jackfield
+   material: black glass, one signal amber, hairline rules
+   ============================================================ */
+.world-machine{--g:#0A0A09;--g2:#121210;--pan:#161714;--amber:#E8A33D;--amber-dim:#8A6A33;--ink:#EAE6DC;--dim:#8C887D;--line:#2A2A24;--cross:#D8D3C6}
+.world-machine .sw.sh1{background:#E8A33D}.world-machine .sw.sh2{background:#8A6A33}.world-machine .sw.sh3{background:#F2EFE6}.world-machine .sw.sh4{background:#1A1B17}
+.world-machine .stage{background:var(--g);color:var(--ink);font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+.world-machine .stage .mono{font-family:"JetBrains Mono",monospace}
+
+/* MACHINE · locked */
+.mm-lock{padding:32px 28px;display:flex;flex-direction:column;gap:14px;min-height:400px;justify-content:center;position:relative}
+.mm-lock::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(180deg,transparent 0 24px,rgba(232,163,61,.06) 24px 25px)}
+.mm-brandrow{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--amber-dim)}
+.mm-brandrow .id{font-family:"JetBrains Mono",monospace;color:var(--dim)}
+.mm-title{font-size:30px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-top:6px;line-height:1}
+.mm-title em{font-style:normal;color:var(--amber)}
+.mm-sub{color:var(--dim);font-size:14px;letter-spacing:.02em;line-height:1.55;max-width:36ch}
+.mm-break{display:flex;align-items:center;gap:14px;margin:6px 0 2px}
+.mm-break .lane-no{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--amber);border:1px solid var(--line);border-radius:5px;padding:5px 9px;background:var(--g2)}
+.mm-break .wire{flex:1;height:2px;position:relative;background:var(--amber)}
+.mm-break .wire::after{content:"";position:absolute;right:-2px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--g);border:2px solid var(--amber)}
+.mm-break .wire.gap{background:repeating-linear-gradient(90deg,var(--amber) 0 10px,transparent 10px 20px);background-size:16px 2px}
+.mm-break .wire.gap::after{background:var(--g);border-color:var(--dim)}
+.mm-key{margin-top:4px}
+.mm-in{width:100%;background:var(--g2);border:1px solid var(--line);border-radius:3px;padding:13px 15px;font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--ink);letter-spacing:.14em;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.mm-in::placeholder{color:var(--dim);opacity:.7}
+.mm-primary{background:var(--amber);color:#241703;font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;padding:14px;border-radius:3px}
+.mm-foot{color:var(--dim);font-size:11.5px;letter-spacing:.04em;line-height:1.6}
+
+/* MACHINE · wallet lanes */
+.mm-wallet{padding:0;min-height:470px;display:flex;flex-direction:column}
+.mm-head{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;padding:20px 22px;border-bottom:1px solid var(--line)}
+.mm-head .slot{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--dim)}
+.mm-head h3{font-size:20px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.mm-head h3 b{color:var(--amber)}
+.mm-acts{display:flex;gap:6px}
+.mm-act{border:1px solid var(--line);background:var(--g2);color:var(--dim);font-family:"Barlow Condensed",sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:6px 10px;border-radius:3px}
+.mm-lanes{flex:1;padding:14px 26px 74px;display:flex;flex-direction:column}
+.mm-lane{display:grid;grid-template-columns:44px 1fr;gap:0;align-content:start;position:relative;padding:2px 0}
+.mm-lane .no{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber-dim);padding-top:14px}
+.mm-lane .rail{position:absolute;left:44px;right:0;top:22px;height:2px}
+.mm-lane .rail .tie{position:absolute;left:0;right:0;height:2px;background:var(--amber)}
+.mm-lane .rail .tie.dot{background:repeating-linear-gradient(90deg,var(--amber) 0 14px,transparent 14px 26px);background-size:26px 2px}
+.mm-lane .rail .tie.cross{background:linear-gradient(var(--amber),var(--amber));background-size:2px 100%}
+.mm-lane .rail .tie.cross::before{content:"";position:absolute;left:0;right:0;top:-3px;height:8px;background:repeating-linear-gradient(90deg,transparent 0 12px,varl(--cross) 12px 13px)}
+.mm-lane .body{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 10px 11px 14px;border-radius:2px}
+.mm-lane .body:hover{background:rgba(232,163,61,.04)}
+.mm-lane .nm{font-size:16px;font-weight:500;letter-spacing:.045em;text-transform:uppercase}
+.mm-lane .nm small{display:block;font-size:10.5px;letter-spacing:.2em;color:var(--dim);margin-top:2px}
+.mm-lane .jid{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--dim)}
+.mm-lane.sel .tie{background:linear-gradient(180deg,transparent 0 6px,var(--amber) 6px 8px,transparent 8px 14px)}
+.mm-lane.sel .body{background:var(--amber);color:#241703}
+.mm-lane.sel .nm small{color:rgba(36,23,3,.7)}
+.mm-lane.sel .jid{color:#5A4218}
+.mm-lane.off .tie{background:none;border-bottom:1px dashed var(--amber-dim)}
+.mm-lane.off .nm{color:var(--dim)}
+.mm-legend{padding:10px 26px 16px;display:flex;gap:16px;border-top:1px solid var(--line);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.mm-legend i{display:inline-block;width:18px;height:2px;margin-right:6px;vertical-align:middle;background:var(--amber)}
+.mm-legend i.gap{background:none;border-bottom:1px dashed var(--amber-dim)}
+.mm-fab{position:absolute;right:40px;bottom:44px;width:52px;height:52px;border-radius:3px;background:var(--amber);color:#241703;font-size:30px;font-weight:500;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 26px -10px rgba(232,163,61,.45)}
+
+/* MACHINE · details */
+.mm-detail{display:flex;flex-direction:column;gap:0;min-height:470px}
+.mm-detail .dtop{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line)}
+.mm-detail .dtop h4{font-size:19px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.mm-detail .dtop .id{font-family:"JetBrains Mono",monospace;color:var(--dim);font-size:11px}
+.mm-detail .dbody{padding:18px 24px;display:flex;flex-direction:column;gap:0}
+.mm-field{display:grid;grid-template-columns:44px 1fr auto;align-items:center;border-bottom:1px solid var(--line);padding:13px 0}
+.mm-field .fh{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.08em;color:var(--amber-dim)}
+.mm-field .fv{font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:.1em}
+.mm-field .fv.masked{color:var(--dim)}
+.mm-field .fv .dotsep{color:var(--amber)}
+.mm-field .copy{font-family:"Barlow Condensed",sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);background:none;border:none;cursor:pointer}
+.mm-reveal{display:flex;align-items:center;gap:10px;justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:2px;background:var(--g2);margin:0 24px 14px}
+.mm-reveal .rword{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.mm-reveal .rgo{color:var(--amber);font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.02em}
+.mm-footbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 24px}
+.mm-btn{border:1px solid var(--line);background:var(--g2);color:var(--dim);font-family:"Barlow Condensed",sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:12px;border-radius:2px}
+.mm-btn.red{color:var(--cross);border-color:rgba(216,211,198,.3)}
+.mm-btn.solid{background:var(--amber);color:#241703;border-color:transparent}
+
+/* MACHINE · form */
+.mm-form{display:flex;flex-direction:column;gap:0;padding:22px 24px;min-height:500px}
+.mm-form .frow{display:grid;grid-template-columns:44px 1fr auto;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}
+.mm-form .fno{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber-dim);padding-top:12px}
+.mm-form .flab{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.mm-form .fin{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);padding:8px 0;font-family:"JetBrains Mono",monospace;font-size:13.5px;color:var(--ink);letter-spacing:.05em}
+.mm-form .fin:focus{outline:none;border-bottom-color:var(--amber)}
+.mm-form .fstate{font-family:"JetBrains Mono",monospace;font-size:10.5px;padding-top:14px;color:var(--dim)}
+.mm-form .fstate ok{color:var(--amber)}
+.mm-form .fstate .x{color:var(--cross)}
+.mm-form .paired{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mm-swatches{display:flex;gap:10px;padding-top:8px}
+.mm-swatch{width:36px;height:36px;border-radius:2px;border:2px solid transparent;background:none;padding:0}
+.mm-swatch.sel{border-color:var(--amber)}
+.mm-send{background:var(--amber);color:#241703;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;padding:14px;border:none;border-radius:2px;margin-top:14px}
+
+/* MACHINE · dialog */
+.mm-dialog{background:var(--g);padding:26px;display:flex;flex-direction:column;gap:16px;border:1px solid var(--line)}
+.mm-dialog .dd{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber)}
+.mm-dialog h4{font-size:19px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.mm-dialog p{color:var(--dim);font-size:13px;line-height:1.6;letter-spacing:.01em}
+.mm-dialog .ddrow{display:flex;gap:10px;justify-content:flex-end}
+.mm-dialog .ddbtn{border:1px solid var(--line);background:var(--g2);color:var(--dim);font-family:"Barlow Condensed",sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:11px 18px;border-radius:2px}
+.mm-dialog .ddbtn.red{color:#1A0E00;background:var(--cross);border-color:transparent;font-weight:600}
+
+/* ============================================================
+   WORLD C — ATELIER  ·  washi sheet, one uncut fold
+   material: vermilion washi, sumi ink, crease white, one gold dot
+   ============================================================ */
+.world-atelier{--paper:#F4EFE4;--paper2:#EFE9DA;--ink:#2A2418;--ink-soft:#6E6657;--ver:#E8492B;--ver-dark:#C03A20;--gold:#C9A227;--crease:#E7E0CD;--line:#D8D2BE}
+.world-atelier .sw.sh1{background:#E8492B}.world-atelier .sw.sh2{background:#C9A227}.world-atelier .sw.sh3{background:#2A2418}.world-atelier .sw.sh4{background:#D8D2BE}
+.world-atelier .stage{background:var(--paper);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,sans-serif}
+.washi-vein{position:absolute;inset:0;opacity:.5;pointer-events:none;background:
+  radial-gradient(circle at 18% 30%,rgba(120,100,60,.05) 0 3px,transparent 3px),
+  radial-gradient(circle at 70% 70%,rgba(120,100,60,.05) 0 2px,transparent 2px),
+  radial-gradient(circle at 40% 90%,rgba(120,100,60,.04) 0 3px,transparent 3px)}
+.at-serif{font-family:"Shippori Mincho",serif}
+
+/* ATELIER · locked */
+.at-lock{padding:40px 34px 34px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.at-lock .washiban{position:absolute;top:0;left:0;right:0;height:7px;background:var(--ver)}
+.at-brand{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--ver);font-weight:500}
+.at-title{font-size:34px;font-family:"Shippori Mincho",serif;line-height:1.1;margin-top:6px}
+.at-title em{font-style:normal;color:var(--ver)}
+.at-sub{color:var(--ink-soft);font-size:13.5px;line-height:1.7}
+.at-key{position:relative;margin-top:4px}
+.at-in{border:none;border-bottom:1.5px solid var(--ink);background:transparent;width:100%;padding:12px 2px;font-family:"JetBrains Mono",monospace;font-size:16px;letter-spacing:.24em;color:var(--ink)}
+.at-in:focus{outline:none;border-bottom-color:var(--ver)}
+.at-in::placeholder{color:#A89F8C;letter-spacing:.06em;font-family:"Zen Kaku Gothic New",sans-serif;font-size:13px}
+.at-primary{background:var(--ver);color:#FBEFE8;font-family:"Shippori Mincho",serif;font-size:14px;letter-spacing:.28em;padding:15px 0;text-align:center;border:none;position:relative;text-transform:uppercase}
+.at-primary::after{content:"";position:absolute;right:-8px;top:-8px;width:14px;height:14px;background:var(--gold);border-radius:50%}
+.at-foot{color:var(--ink-soft);font-size:11.5px;line-height:1.7}
+
+/* ATELIER · wallet (folio) */
+.at-wallet{padding:0;min-height:480px;display:flex;flex-direction:column;position:relative}
+.at-wallet .at-head{display:flex;justify-content:space-between;align-items:baseline;padding:22px 26px 6px}
+.at-wallet .at-count{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft)}
+.at-wallet .at-count b{color:var(--ver);font-weight:500}
+.at-acts{display:flex;gap:8px;align-items:baseline}
+.at-act{background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;padding:4px 2px;border-bottom:1px solid transparent}
+.at-act:hover{border-bottom-color:var(--ver);color:var(--ink)}
+.at-folio{padding:16px 26px 40px;display:flex;flex-direction:column;gap:18px}
+.at-card{--card-c1:#E8492B;--card-c2:#C03A20;position:relative;border-radius:4px;padding:2px;background:var(--send){};background:none}
+.at-card .sheet{position:relative;background:linear-gradient(135deg,var(--card-c1),var(--card-c2));border:1px solid rgba(42,36,24,.18);border-radius:3px;overflow:hidden;color:#FCF3EA;padding:20px 22px 18px;box-shadow:0 2px 0 rgba(42,36,24,.18),0 14px 22px -18px rgba(42,36,24,.5)}
+.at-card .sheet::before{content:"";position:absolute;top:0;left:0;right:0;height:46%;background:linear-gradient(180deg,rgba(255,255,255,.08),transparent)}
+.at-card .sheet .rule{height:1px;background:rgba(252,243,234,.28);margin:6px 0 9px}
+.at-card .sheettop{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(252,243,234,.85);font-weight:500}
+.at-card .nm{font-family:"Shippori Mincho",serif;font-size:19px;letter-spacing:.06em;color:#FCF3EA}
+.at-card .sub{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(252,243,234,.72);margin-top:4px}
+.at-card .orn{position:absolute;right:22px;bottom:16px;font-size:11px;letter-spacing:.3em;color:rgba(252,243,234,.5)}
+.at-card.washi{--card-c1:#C9A227;--card-c2:#A8841A;color:#2A2418}
+.at-card.washi .nm,.at-card.washi .sheettop{color:#2A2418}
+.at-card.washi .sheet::before{background:linear-gradient(180deg,rgba(255,255,255,.25),transparent)}
+.at-card.washi .sub{color:rgba(42,36,24,.72)}
+.at-card.washi .orn{color:rgba(42,36,24,.5)}
+.at-card.ink{--card-c1:#39332A;--card-c2:#241F17}
+.at-fab{position:absolute;right:40px;bottom:40px;width:54px;height:54px;border-radius:50%;background:var(--ver);color:#FBEFE8;font-size:26px;font-weight:300;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 26px -14px rgba(232,73,43,.6);border:2px solid rgba(255,255,255,.14)}
+.at-fab::after{content:"";position:absolute;inset:-4px;border:1px solid rgba(232,73,43,.35);border-radius:50%}
+
+/* ATELIER · details */
+.at-detail{display:flex;flex-direction:column;gap:16px;padding:26px;min-height:470px}
+.at-det-top{display:flex;justify-content:space-between;align-items:baseline}
+.at-det-top h4{font-family:"Shippori Mincho",serif;font-size:22px}
+.at-det-top .id{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
+.at-line{border:1px solid var(--line);border-radius:2px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.at-line .k{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft)}
+.at-line .v{font-family:"JetBrains Mono",monospace;font-size:13.5px;letter-spacing:.12em}
+.at-line .v .seat{color:var(--ink-soft)}
+.at-line .v .gold{color:var(--ver)}
+.at-copy{background:none;border:none;color:var(--ver);font-family:inherit;font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
+.at-reveal{display:flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;background:none;border:none;color:var(--ink);cursor:pointer}
+.at-reveal .foldmark{display:inline-block;width:22px;height:1px;background:linear-gradient(90deg,var(--gold) 0 7px,var(--ink) 7px 14px,transparent 14px)}
+.at-line.crease{position:relative;overflow:hidden}
+.at-line.crease::after{content:"";position:absolute;left:-6%;width:112%;height:1px;background:rgba(42,36,24,.35);transform:rotate(-4deg)}
+.at-footb{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:auto}
+.at-b{border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit;font-size:12px;letter-spacing:.2em;text-transform:uppercase;padding:13px;border-radius:2px;cursor:pointer}
+.at-b.red{color:var(--ver);border-color:var(--ver)}
+
+/* ATELIER · form */
+.at-form{display:flex;flex-direction:column;gap:14px;padding:26px;min-height:520px}
+.at-form .fl{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft)}
+.at-form .fi{border:none;border-bottom:1px solid var(--line);background:transparent;width:100%;padding:9px 2px;font-family:"Zen Kaku Gothic New",sans-serif;font-size:15px;color:var(--ink)}
+.at-form .fi:focus{outline:none;border-bottom-color:var(--ver)}
+.at-form .fi::placeholder{color:#A89F8C;font-size:13.5px}
+.at-form .fh{border-top:1px solid var(--line);padding-top:16px;margin-top:2px}
+.at-form .hint{font-size:11.5px;color:var(--ink-soft)}
+.at-form .hint.bad{color:var(--ver)} .at-form .hint.good,.at-form .hint.ok{color:#4E7A3A}
+.at-form .paired{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.at-swatches{display:flex;gap:10px}
+.at-sw{width:38px;height:38px;border-radius:50%;border:2px solid transparent;background:none;padding:0}
+.at-sw .core{width:100%;height:100%;border-radius:50%}
+.at-sw.sel{border-color:var(--ver);box-shadow:0 0 0 3px rgba(232,73,43,.12)}
+.at-send{background:var(--ver);color:#FBEFE8;font-family:"Shippori Mincho",serif;font-size:13px;letter-spacing:.24em;text-transform:uppercase;padding:15px;border:none}
+
+/* ATELIER · dialog */
+.at-dialog{background:var(--paper);padding:30px;display:flex;flex-direction:column;gap:16px;border:1px solid var(--line);box-shadow:0 22px 44px -30px rgba(42,36,24,.6)}
+.at-dialog .foldtop{display:flex;gap:10px;align-items:center}
+.at-dialog .foldtop i{width:6px;height:6px;background:var(--ver);border-radius:50%}
+.at-dialog .foldtop i:nth-child(2){width:14px;height:2px;background:var(--ver)}
+.at-dialog h4{font-family:"Shippori Mincho",serif;font-size:20px}
+.at-dialog p{color:var(--ink-soft);font-size:13.5px;line-height:1.7}
+.at-dialog .drow{display:flex;gap:10px;justify-content:flex-end}
+.at-dialog .db{background:none;border:1px solid var(--line);font-family:inherit;font-size:12px;letter-spacing:.2em;text-transform:uppercase;padding:12px 18px;cursor:pointer;color:var(--ink)}
+.at-dialog .db.red{background:var(--ver);border-color:var(--ver);color:#FBEFE8}
+</style>
+</head>
+<body>
+
+<header class="masthead wrap">
+  <div class="kicker">Design directions · for selection</div>
+  <h1>CardVault, three ways.</h1>
+  <p>Three complete visual directions for the local, encrypted card vault. Same product, same privacy rule — the home screen never shows a number, details stay masked until you reveal them — three different material worlds. Every screen below is mocked at full UI fidelity; all card data is synthetic sample content.</p>
+  <p class="fine">Open each direction, then tell me “A”, “B” or “C”. I’ll rebuild every Avalonia view in the chosen world.</p>
+</header>
+
+<nav class="nav"><div class="wrap nav-inner">
+  <a href="#world-a" class="on">A · Readout</a>
+  <a href="#world-b">B · Machine Room</a>
+  <a href="#world-c">C · Atelier</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ================= WORLD A : READOUT ================= -->
+<section class="world-card world-readout" id="world-a">
+  <div class="world-head">
+    <div class="world-title">
+      <div class="num">DIRECTION A</div>
+      <h2>Readout</h2>
+      <p class="thesis">A seven-segment display family — bedside clock, gas-station totem, scoreboard. Numbers are the whole product, so absence is drawn as deliberately as light: every unlit segment exists. The vault is a rack of masked cells; the lock is an unset clock blinking its colon; revealing a card is segments igniting.</p>
+    </div>
+    <div class="world-meta">
+      <div class="m"><span class="k">Material</span><span class="v">Matte near-black glass, lit LED segments, ghost (unlit) cells.</span></div>
+      <div class="m"><span class="k">Palette</span><span class="v swatches"><span class="sw sh1"></span><span class="sw sh2"></span><span class="sw sh3"></span><span class="sw sh4"></span></span></div>
+      <div class="m"><span class="k">Type</span><span class="v">Seven-segment glyphs for every number &amp; code · Space Grotesk for labels/prose.</span></div>
+      <div class="m"><span class="k">Motion</span><span class="v">Nothing slides. Every state is an instant segment swap; the locked clock blinks.</span></div>
+      <div class="m"><span class="k">Risk</span><span class="v risk">A museum piece more than a daily app unless the mask logic feels functional — but the product <em>is</em> masked numbers.</span></div>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <div class="screen">
+      <div class="tag">Locked gate</div>
+      <div class="stage">
+        <div class="ro-lock">
+          <div class="ro-clock"><span class="big lit">12</span><span class="colon">:</span><span class="big lit">08</span></div>
+          <div class="ro-title">Vault locked</div>
+          <div class="ro-sub">Enter the master password. Four digits on every masked cell will wake with it.</div>
+          <div class="ro-key"><span class="kcell">●</span><span class="kcell">●</span><span class="kcell">●</span><span class="kcell">●</span><span class="keep">▁</span></div>
+          <div class="ro-primary">Unlock</div>
+          <div class="ro-foot">never leaves this device · no network access</div>
+        </div>
+      </div>
+      <p class="note">The canonical error state of the world — <code>00:00</code> blinking — is what sits on the unlock screen until the vault wakes.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Wallet — label only</div>
+      <div class="stage ro-wallet" style="position:relative">
+        <div class="ro-top">
+          <div class="ro-brand">CardVault <span class="ro-count">/ 4</span></div>
+          <div class="ro-acts">
+            <span class="ro-act">Settings</span>
+            <span class="ro-act amber">Lock</span>
+          </div>
+        </div>
+        <div class="ro-slots">
+          <div class="ro-slot">
+            <div class="mnum"><i></i><i></i><i></i><i></i></div>
+            <div class="meta"><div class="nm">Marina Visa</div><div class="br">VISA · DEBIT</div></div>
+            <div class="ro-puck"><span class="ro-swatchpuck"></span><div class="ro-slot .puck" style="width:auto"></div><div class="puck"><div class="led lv ok" style="background:#C9332B"></div></div></div>
+          </div>
+          <div class="ro-slot">
+            <div class="mnum"><i></i><i></i><i></i><i></i></div>
+            <div class="meta"><div class="nm">Ember Amex</div><div class="br">AMEX · CREDIT</div></div>
+            <div class="puck"><div class="led lv" style="background:#2E6B4F"></div></div>
+          </div>
+          <div class="ro-slot">
+            <div class="mnum"><i></i><i></i><i></i><i></i></div>
+            <div class="meta"><div class="nm">Atlas Debit</div><div class="br">MASTERCARD · DEBIT</div></div>
+            <div class="puck"><div class="led lv" style="background:#3E5B9E"></div></div>
+          </div>
+          <div class="ro-slot">
+            <div class="mnum"><i></i><i></i><i></i><i></i></div>
+            <div class="meta"><div class="nm">Studio Card</div><div class="br">DISCOVER · CREDIT</div></div>
+            <div class="puck"><div class="led lv" style="background:#8A5A3B"></div></div>
+          </div>
+        </div>
+        <div class="ro-fab">＋</div>
+        <div class="ro-empty"><b>Empty state:</b> one amber slot with “—— —— —— ——” and “No cards yet” — the rack still exists, the cells stay ghosted.</div>
+      </div>
+      <p class="note">Home holds four rows. Each card is a masked four-cell strip plus its label — the number is present as absence.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Card details — revealed</div>
+      <div class="stage">
+        <div class="ro-detail">
+          <div class="ro-face">
+            <div class="lbl"><span>CARD NUMBER</span><span class="lbval seg-font">4242 9242 9410 4242</span></div>
+            <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:rgba(255,255,255,.72)">
+              <span>MARINA KO / VALID 08/27 / CVV 242</span>
+              <span style="color:var(--amber)">LIVE</span>
+            </div>
+          </div>
+          <div class="ro-row"><span class="k">Card number</span><span class="v">4242 9242 9410 4242</span><span class="ro-copy">Copy</span></div>
+          <div class="ro-row"><span class="k">Cardholder</span><span class="v">Marina Ko</span><span class="ro-copy">Copy</span></div>
+          <div class="ro-row"><span class="k">Expiry · CVV</span><span class="v">08/27 · 242</span><span class="ro-copy">Copy</span></div>
+          <div class="ro-row" style="border-bottom:none"><span class="k">Note</span><span class="v" style="font-family:'Space Grotesk',sans-serif;letter-spacing:0;color:var(--dim)">Replacement arrives in June.</span></div>
+          <div class="ro-ctlrow"><span class="ro-btn">Edit</span><span class="ro-btn">Mask</span><span class="ro-btn red">Delete</span></div>
+        </div>
+      </div>
+      <p class="note">Masked by default: <code>4242 •••• •••• 4242</code> in ghost cells. Reveal ignites them.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Add card form</div>
+      <div class="stage">
+        <div class="ro-form">
+          <div class="ro-field">
+            <span class="ro-lab">Card name</span>
+            <div class="ro-in" style="font-family:'Space Grotesk',sans-serif;letter-spacing:0">Summer Visa</div>
+            <span class="ro-hint idle">Only the label shows on the home rack.</span>
+          </div>
+          <div class="ro-field">
+            <span class="ro-ibmx">Name on card</span>
+            <div class="ro-in" style="font-family:'Space Grotesk',sans-serif;letter-spacing:0">A. Rivera</div>
+            <span class="ro-hint good">Matches the embossed text</span>
+          </div>
+          <div class="ro-field">
+            <span class="ro-lab">Card number</span>
+            <div class="ro-in bad">4242 9242 9410 424<u>2</u></div>
+            <span class="ro-hint bad">Luhn check fails — digit 16</span>
+          </div>
+          <div class="ro-down">
+            <div class="ro-field"><span class="ro-lab">Expiry</span><div class="ro-in good">08/27</div><span class="ro-hint good">Active</span></div>
+            <div class="ro-field"><span class="ro-lab">CVV</span><div class="ro-in idle" style="color:var(--ghost)">•••</div><span class="ro-hint idle">3 digits</span></div>
+          </div>
+          <div class="ro-field">
+            <span class="ro-lab">Card colour</span>
+            <div class="ro-swatches">
+              <span class="ro-swatch sel"><span class="core" style="background:var(--red)"></span></span>
+              <span class="ro-swatch"><span class="core" style="background:var(--amber)"></span></span>
+              <span class="ro-swatch"><span class="core" style="background:#2E6B4F"></span></span>
+              <span class="ro-swatch"><span class="core" style="background:#3E5B9E"></span></span>
+              <span class="ro-swatch"><span class="core" style="background:#8A5A3B"></span></span>
+            </div>
+          </div>
+          <div class="ro-send">Add card</div>
+        </div>
+      </div>
+      <p class="note">Validation reads on the LED strip itself — a bad digit leaves its cell ghost; good fields hold an amber glow.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Delete confirmation</div>
+      <div class="stage">
+        <div class="ro-dialog">
+          <h4>Delete “Marina Visa”?</h4>
+          <p>Removing it clears the label and its encrypted cells from the rack. This cannot be undone.</p>
+          <div class="row"><span class="btn">Cancel</span><span class="btn red">Delete</span></div>
+        </div>
+      </div>
+      <p class="note">The danger action is a lit-red segment — the only red on the surface that is not the live unread state.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= WORLD B : MACHINE ROOM ================= -->
+<section class="world-card world-machine" id="world-b">
+  <div class="world-head">
+    <div class="world-title">
+      <div class="num">DIRECTION B</div>
+      <h2>Machine Room</h2>
+      <p class="thesis">A normalled jackfield: the schedule taped inside a machine-room door, amber lanes over black glass, everything tied to its default. The vault is normalled — its normal is “locked”. Unlocking plugs the line; breaking a card’s link is disabling or deleting it. No colour carries state — the <em>line</em> does.</p>
+    </div>
+    <div class="world-meta">
+      <div class="m"><span class="k">Material</span><span class="v">Black glass, hairline rules, one signal amber, numbered lanes that never reflow.</span></div>
+      <div class="m"><span class="k">Palette</span><span class="v swatches"><span class="sw sh1"></span><span class="sw sh2"></span><span class="sw sh3"></span><span class="sw sh4"></span></span></div>
+      <div class="m"><span class="k">Type</span><span class="v">One condensed grotesque (Barlow Condensed), small-cap legends, rank by inversion on an amber plate.</span></div>
+      <div class="m"><span class="k">State</span><span class="v">Link lines: solid = live · dashed gap = disabled · doubled = selected · open ring = destructive.</span></div>
+      <div class="m"><span class="k">Risk</span><span class="v risk">Machine-room darkness can feel cold outside its nerd context; the patch language needs to stay legible to a non-engineer.</span></div>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <div class="screen">
+      <div class="tag">Locked gate</div>
+      <div class="stage">
+        <div class="mm-lock">
+          <div class="mm-brandrow"><span>CARDVAULT</span><span class="id">JACKFIELD &nbsp;01–48</span></div>
+          <div class="mm-title">Break the <em>normal</em></div>
+          <div class="mm-sub">The vault returns to “locked” the moment you walk away. Plug the master line to hold it open.</div>
+          <div class="mm-break"><span class="lane-no">LINE 00</span><div class="wire"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)">— NORMALLED —</span></div></div>
+          <div class="mm-key">
+            <input class="mm-in" type="password" placeholder="MASTER PASSWORD" value="●●●●●●●●">
+          </div>
+          <div class="mm-primary">Unplug to unlock</div>
+          <div class="mm-foot">encrypted on the local disk · seal hash verified on entry</div>
+        </div>
+      </div>
+      <p class="note">Everything on the surface is normalled until you actively break it — the copy makes the security model visible.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Wallet — lanes</div>
+      <div class="stage mm-wallet" style="position:relative">
+        <div class="mm-head">
+          <span class="slot">PATCH</span>
+          <h3>Wallet <b>· 4 normalled</b></h3>
+          <div class="mm-acts"><span class="mm-act">Settings</span><span class="mm-act">Lock</span></div>
+        </div>
+        <div class="mm-lanes">
+          <div class="mm-lane sel">
+            <span class="no">01</span>
+            <div class="rail"><div class="tie"></div></div>
+            <div class="body"><span class="nm">Marina Visa <small>VISA · DEBIT</small></span><span class="jid">4242-…-4242</span></div>
+          </div>
+          <div class="mm-lane">
+            <span class="no">02</span>
+            <div class="rail"><div class="tie"></div></div>
+            <div class="body"><span class="nm">Ember Amex <small>AMEX · CREDIT</small></span><span class="jid">3742-…-005</span></div>
+          </div>
+          <div class="mm-lane">
+            <span class="no">03</span>
+            <div class="rail"><div class="tie"></div></div>
+            <div class="body"><span class="nm">Atlas Debit <small>MASTERCARD · DEBIT</small></span><span class="jid">5421-…-3301</span></div>
+          </div>
+          <div class="mm-lane off">
+            <span class="no">04</span>
+            <div class="rail"><div class="tie dot"></div></div>
+            <div class="body"><span class="nm">Studio Card <small>DISCOVER · SUSPENDED</small></span><span class="jid">—</span></div>
+          </div>
+        </div>
+        <div class="mm-legend"><span><i></i>live</span><span><i class="gap"></i>gapped</span><span style="font-family:'JetBrains Mono',monospace;letter-spacing:.02em;text-transform:none">01–04 lanes</span></div>
+        <div class="mm-fab">＋</div>
+      </div>
+      <p class="note">Selected lane inverts onto an amber plate; a suspended card sits gapped on its tie.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Card details — revealed</div>
+      <div class="stage">
+        <div class="mm-detail">
+          <div class="dtop"><h4>Marina Visa</h4><span class="id">/L/01</span></div>
+          <div class="dbody">
+            <div class="mm-field"><span class="fh">ST</span><span class="fv" style="color:var(--amber)">● LIVE</span><span class="copy">copy</span></div>
+            <div class="mm-field"><span class="fh">NBR</span><span class="fv">4242 <span class="dotsep">·</span> 9242 <span class="dotsep">·</span> 9410 <span class="dotsep">·</span> 4242</span><span class="copy">copy</span></div>
+            <div class="mm-field"><span class="fh">HDR</span><span class="fv">Marina Ko</span><span class="copy">copy</span></div>
+            <div class="mm-field"><span class="fh">EXP</span><span class="fv">08 / 27</span><span class="copy">copy</span></div>
+            <div class="mm-field"><span class="fh">CVV</span><span class="fv">242</span><span class="copy">copy</span></div>
+            <div class="mm-field" style="border-bottom:none"><span class="fh">NT</span><span class="fv" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:.03em;color:var(--dim)">Replacement arrives in June.</span></div>
+          </div>
+          <div class="mm-reveal"><span class="rword">Revealed · hide after use</span><span class="rgo">⇤ unmask → mask</span></div>
+          <div class="mm-footbtns"><span class="mm-btn red">Delete</span><span class="mm-btn solid">Done</span></div>
+        </div>
+      </div>
+      <p class="note">Masked: <code>4242 ·••• ·••• ·4242</code>, held as a gapped line until you double it to reveal.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Add card form</div>
+      <div class="stage">
+        <div class="mm-form">
+          <div class="frow"><span class="fno">A</span><div><div class="flab">Card name</div><input class="fin" value="Summer Visa"></div><span class="fstate">ok</span></div>
+          <div class="frow"><span class="fno">B</span><div><div class="flab">Name on card</div><input class="fin" value="A. Rivera"></div><span class="fstate">ok</span></div>
+          <div class="frow"><span class="fno">C</span><div><div class="flab">Card number</div><input class="fin" value="4242 9242 9410 4242" style="border-bottom-color:var(--cross)"></div><span class="fstate"><span class="x">✕ luhn 16</span></span></div>
+          <div class="paired">
+            <div class="frow" style="grid-template-columns:1fr"><div><div class="flab">Expiry</div><input class="fin" value="08/27"></div></div>
+            <div class="frow" style="grid-template-columns:1fr"><div><div class="flab">CVV</div><input class="fin" value="•••"></div></div>
+          </div>
+          <div class="frow" style="grid-template-columns:1fr"><div><div class="flab">Card colour — swatches</div>
+            <div class="mm-swatches"><span class="mm-swatch sel" style="background:#C9332B"></span><span class="mm-swatch" style="background:#E8A33D"></span><span class="mm-swatch" style="background:#2E6B4F"></span><span class="mm-swatch" style="background:#3E5B9E"></span><span class="mm-swatch" style="background:#8A5A3B"></span></div>
+          </div></div>
+          <div class="mm-send">Patch in card</div>
+        </div>
+      </div>
+      <p class="note">Field state rides the line: valid = solid tie, invalid = cross-tick. Copy stays field-level, never shouted.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Delete confirmation</div>
+      <div class="stage">
+        <div class="mm-dialog">
+          <div class="dd">LANE 01 · UNPLUG REQUEST</div>
+          <h4>Remove “Marina Visa”?</h4>
+          <p>This opens the lane’s ring — the card and its encrypted payload are deleted. The line cannot be re-patched.</p>
+          <div class="ddrow"><span class="ddbtn">Cancel</span><span class="ddbtn red">Unplug &amp; delete</span></div>
+        </div>
+      </div>
+      <p class="note">Destructive is the open-ring end — drawn, not coloured.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= WORLD C : ATELIER ================= -->
+<section class="world-card world-atelier" id="world-c">
+  <div class="world-head">
+    <div class="world-title">
+      <div class="num">DIRECTION C</div>
+      <h2>Atelier</h2>
+      <p class="thesis">A single uncut sheet of washi — vermilion face, sumi ink, kozo fiber, one gold dot marking the active step. Paper is the primitive: cards are printed plates, the home is a folio, revealing a card opens its crease. Print-craft quiet: no glow, no glass, just paper, ink and one trusting fold.</p>
+    </div>
+    <div class="world-meta">
+      <div class="m"><span class="k">Material</span><span class="v">Washi paper, sumi ink, crease-white fold lines, one gold dot; layered sheet shadows.</span></div>
+      <div class="m"><span class="k">Palette</span><span class="v swatches"><span class="sw sh1"></span><span class="sw sh2"></span><span class="sw sh3"></span><span class="sw sh4"></span></span></div>
+      <div class="m"><span class="k">Type</span><span class="v">Zen Kaku Gothic for interface copy · Shippori Mincho for card names and headings.</span></div>
+      <div class="m"><span class="k">Motion</span><span class="v">One authored moment: the reveal is a crease opening, not a fade. Everything else stays still.</span></div>
+      <div class="m"><span class="k">Risk</span><span class="v risk">The fold poetry can slow a quick grab; creases stay a reveal-only device, never a navigation metaphor.</span></div>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <div class="screen">
+      <div class="tag">Locked gate</div>
+      <div class="stage">
+        <div class="at-lock">
+          <div class="washiban"></div>
+          <div class="at-brand">CardVault</div>
+          <div class="at-title">The vault<br>is <em>sealed</em>.</div>
+          <div class="at-sub">A master password folds every card back into a single sheet. Enter it to open the folio.</div>
+          <div class="at-key"><input class="at-in" type="password" placeholder="Master password" value="••••••••"></div>
+          <div class="at-primary">Unseal</div>
+          <div class="at-foot">plaintext never touches disk · the key is zeroed on lock</div>
+        </div>
+      </div>
+      <p class="note">The vermilion band is the fold being held shut; the gold dot is the active step.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Wallet — folio</div>
+      <div class="stage at-wallet" style="position:relative">
+        <div class="washi-vein"></div>
+        <div class="at-head">
+          <span class="at-count">Folio · <b>four cards</b></span>
+          <div class="at-acts"><span class="at-act">Settings</span><span class="at-act">Lock</span></div>
+        </div>
+        <div class="at-folio">
+          <div class="at-card">
+            <div class="sheet">
+              <div class="sheettop"><span>Visa · Debit</span><span>NO. 01</span></div>
+              <div style="height:14px"></div>
+              <div class="rule"></div>
+              <div class="nm">Marina Visa</div>
+              <div class="sub">Descended · est. 2019</div>
+              <div class="orn">◆ ⊙</div>
+            </div>
+          </div>
+          <div class="at-card washi">
+            <div class="sheet">
+              <div class="sheettop"><span>Amex · Credit</span><span>NO. 02</span></div>
+              <div style="height:14px"></div>
+              <div class="rule"></div>
+              <div class="nm">Ember Amex</div>
+              <div class="sub">Descended · est. 2021</div>
+              <div class="orn">◆ ⊙</div>
+            </div>
+          </div>
+          <div class="at-card ink">
+            <div class="sheet">
+              <div class="sheettop"><span>Studio · Recurring</span><span>NO. 03</span></div>
+              <div style="height:14px"></div>
+              <div class="rule"></div>
+              <div class="nm">Studio Retainer</div>
+              <div class="sub">Sets billing · renews 04</div>
+              <div class="orn">◆ ⊙</div>
+            </div>
+          </div>
+        </div>
+        <div class="at-fab">＋</div>
+      </div>
+      <p class="note">Labels are letterpressed plates; nothing numeric appears on the folio, not even “4242”, because the number isn’t in the folio.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Card details — revealed</div>
+      <div class="stage">
+        <div class="at-detail">
+          <div class="at-det-top"><h4>Marina Visa</h4><span class="id">No.01 · revealed</span></div>
+          <div class="at-line crease"><span class="k">Card number</span><span class="v">4242 <span class="seat">·</span> 9242 <span class="seat">·</span> 9410 <span class="seat">·</span> <span class="gold">4242</span></span><span class="at-copy">Copy</span></div>
+          <div class="at-line"><span class="k">Cardholder</span><span class="v">Marina Ko</span><span class="at-copy">Copy</span></div>
+          <div class="at-line"><span class="k">Expiry</span><span class="v">08 / 27</span><span class="at-copy">Copy</span></div>
+          <div class="at-line"><span class="k">Security code</span><span class="v">242</span><span class="at-copy">Copy</span></div>
+          <div class="at-line"><span class="k">Note</span><span class="v" style="font-family:'Zen Kaku Gothic New',sans-serif;letter-spacing:.02em;color:var(--ink-soft)">Replacement arrives in June.</span></div>
+          <div style="display:flex;gap:16px;align-items:center;margin-top:2px"><span class="at-reveal"><span class="foldmark"></span> Refold</span></div>
+          <div class="at-footb"><span class="at-b red">Delete</span><span class="at-b">Edit</span></div>
+        </div>
+      </div>
+      <p class="note">Masked value sits as seats (<code>•</code>) under a crease; reveal opens the fold and the final four are gold.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Add card form</div>
+      <div class="stage">
+        <div class="at-form">
+          <div>
+            <div class="fl">Card name</div>
+            <input class="fi" placeholder="e.g. Personal Visa" value="Summer Visa">
+            <span class="hint">Shown as the letterpress label on the folio.</span>
+          </div>
+          <div>
+            <div class="fl">Name on card</div>
+            <input class="fi" placeholder="As embossed" value="A. Rivera">
+            <span class="hint ok">Matches the embossed text</span>
+          </div>
+          <div class="fh">
+            <div class="fl">Card number</div>
+            <input class="fi" value="4242 9242 9410 424" style="border-bottom-color:var(--ver)">
+            <span class="hint bad">Luhn check fails — the 16th digit is not set.</span>
+          </div>
+          <div class="paired">
+            <div><div class="fl">Expiry</div><input class="fi" value="08/27"><span class="hint good">Card is active</span></div>
+            <div><div class="fl">CVV</div><input class="fi" value="•••"><span class="hint">3 digits</span></div>
+          </div>
+          <div class="fh">
+            <div class="fl">Card colour</div>
+            <div class="at-swatches" style="margin-top:10px">
+              <span class="at-sw sel"><span class="core" style="background:var(--ver)"></span></span>
+              <span class="at-sw"><span class="core" style="background:var(--gold)"></span></span>
+              <span class="at-sw"><span class="core" style="background:#2E6B4F"></span></span>
+              <span class="at-sw"><span class="core" style="background:#39332A"></span></span>
+              <span class="at-sw"><span class="core" style="background:#3E5B9E"></span></span>
+            </div>
+          </div>
+          <div class="at-send">Press this card</div>
+        </div>
+      </div>
+      <p class="note">Error is margin annotation in vermilion — “the 16th digit is not set” — a written correction, not a warning bar.</p>
+    </div>
+
+    <div class="screen">
+      <div class="tag">Delete confirmation</div>
+      <div class="stage">
+        <div class="at-dialog">
+          <div class="foldtop"><i></i><i></i></div>
+          <h4>Cut “Marina Visa”?</h4>
+          <p>Cutting the sheet removes the card and its sealed payload. A cut edge cannot be rejoined.</p>
+          <div class="drow"><span class="db">Keep</span><span class="db red">Cut card</span></div>
+        </div>
+      </div>
+      <p class="note">Destructive copy borrows the print-world’s own word: <em>cut</em>. “Keep / Cut card” — no OK/Cancel anywhere.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footnote wrap">
+  <div class="row">
+    <div>
+      <strong>Also weighed</strong><br>
+      A pill-elbow starship console (playful, pastel-on-black) and a zoo-guide map (flat lobes) were fused, then declined — both risked reading as décor rather than a vault. The console’s instant colour-swap discipline was folded into Readout; the map’s overshoot was not taken anywhere.
+    </div>
+    <div>
+      <strong>What’s shared</strong><br>
+      The privacy rule is identical in all three: the home surface never carries a number. Every direction keeps live validation, reveal-to-copy, auto-lock, and encrypted export. Settings and dialogs follow from the world’s own grammar.
+    </div>
+    <div>
+      <strong>Your call</strong><br>
+      Tell me A, B, or C — or mix: the winner’s world with a named habit from another (e.g. “B, but keep A’s blink on lock”). I’ll then rebuild every Avalonia view and window in the chosen direction.
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+// segmented control: keep the active link honest on scroll
+const links=[...document.querySelectorAll('.nav a')];
+const cards=[...document.querySelectorAll('.world-card')];
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.hash==='#'+e.target.id));}});},{rootMargin:'-35% 0px -60% 0px'});
+cards.forEach(c=>io.observe(c));
+</script>
+</body>
+</html>

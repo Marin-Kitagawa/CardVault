@@ -1,0 +1,461 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ======================== Global ======================== -->
+    <Style Selector="Window">
+        <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+        <Setter Property="Background" Value="{DynamicResource BrushAppBg}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+    </Style>
+
+    <Style Selector="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+    </Style>
+
+    <Style Selector="TextBox.tcard, TextBox.tarea">
+        <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+    </Style>
+
+    <!-- ======================== Text classes ======================== -->
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontFamily" Value="{DynamicResource FontDisplay}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontFamily" Value="{DynamicResource FontDisplay}" />
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.body">
+        <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.faint">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextFaint}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.eyebrow">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontMono}" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="1.4" />
+    </Style>
+    <Style Selector="TextBlock.clock">
+        <Setter Property="FontFamily" Value="{DynamicResource FontDigits}" />
+        <Setter Property="FontSize" Value="54" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="LetterSpacing" Value="4" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushAccent}" />
+    </Style>
+
+    <!-- ======================== TextBox ======================== -->
+    <Style Selector="TextBox.tcard">
+        <Setter Property="Background" Value="{DynamicResource BrushInputBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="4,10" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource BrushSelectionBg}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource BrushSelectionText}" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="TextBox">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Auto">
+                        <Panel Background="Transparent">
+                            <TextBlock Text="{TemplateBinding Watermark}"
+                                       IsVisible="{TemplateBinding Text, Converter={StaticResource StringEmptyToBool}}"
+                                       Foreground="{DynamicResource BrushTextFaint}"
+                                       Margin="{TemplateBinding Padding}"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False" />
+                            <TextPresenter x:Name="PART_TextPresenter"
+                                           Text="{TemplateBinding Text, Mode=TwoWay}"
+                                           CaretBrush="{TemplateBinding CaretBrush}"
+                                           SelectionBrush="{TemplateBinding SelectionBrush}"
+                                           SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                           Background="Transparent"
+                                           PasswordChar="{TemplateBinding PasswordChar}"
+                                           RevealPassword="{TemplateBinding RevealPassword}"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="{TemplateBinding TextWrapping}" />
+                        </Panel>
+                    </ScrollViewer>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="TextBox.tcard:pointerover /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushInputBorder}" />
+    </Style>
+    <Style Selector="TextBox.tcard:focus /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowFocus}" />
+    </Style>
+
+    <Style Selector="TextBox.tarea">
+        <Setter Property="Background" Value="{DynamicResource BrushInputBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="6,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource BrushSelectionBg}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource BrushSelectionText}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="TextBox">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Auto">
+                        <Panel Background="Transparent">
+                            <TextBlock Text="{TemplateBinding Watermark}"
+                                       IsVisible="{TemplateBinding Text, Converter={StaticResource StringEmptyToBool}}"
+                                       Foreground="{DynamicResource BrushTextFaint}"
+                                       Margin="{TemplateBinding Padding}"
+                                       VerticalAlignment="Top"
+                                       IsHitTestVisible="False" />
+                            <TextPresenter x:Name="PART_TextPresenter"
+                                           Text="{TemplateBinding Text, Mode=TwoWay}"
+                                           CaretBrush="{TemplateBinding CaretBrush}"
+                                           SelectionBrush="{TemplateBinding SelectionBrush}"
+                                           SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                           Background="Transparent"
+                                           Margin="{TemplateBinding Padding}"
+                                           VerticalAlignment="Top"
+                                           TextWrapping="{TemplateBinding TextWrapping}" />
+                        </Panel>
+                    </ScrollViewer>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="TextBox.tarea:pointerover /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushInputBorder}" />
+    </Style>
+    <Style Selector="TextBox.tarea:focus /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowFocus}" />
+    </Style>
+
+    <!-- ======================== Password input (TextBox, restyled) ======================== -->
+    <Style Selector="TextBox.tcard:password:pointerover /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushInputBorder}" />
+    </Style>
+    <Style Selector="TextBox.tcard:password:focus /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowFocus}" />
+    </Style>
+
+    <!-- ======================== Buttons ======================== -->
+    <Style Selector="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
+    </Style>
+
+    <Style Selector="Button.tlink">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.tlink:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+    </Style>
+
+    <Style Selector="Button.tprimary">
+        <Setter Property="Background" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushOnAccent}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="20,12" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tprimary:pointerover /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushAccentHover}" />
+    </Style>
+    <Style Selector="Button.tprimary:pressed /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushAccentPressed}" />
+    </Style>
+    <Style Selector="Button.tprimary:disabled /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushPrimaryDisabled}" />
+    </Style>
+    <Style Selector="Button.tprimary:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextFaint}" />
+    </Style>
+
+    <Style Selector="Button.ghost">
+        <Setter Property="Background" Value="{DynamicResource BrushGhostBg}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="18,11" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushGhostHover}" />
+    </Style>
+    <Style Selector="Button.ghost:pressed /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushGhostPressed}" />
+    </Style>
+
+    <Style Selector="Button.danger">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushDangerBorder}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="18,11" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Margin="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushDangerSoft}" />
+    </Style>
+
+    <Style Selector="Button.icon">
+        <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        ClipToBounds="True">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.icon:pointerover /template/ Border#chrome">
+        <Setter Property="Background" Value="{DynamicResource BrushIconHover}" />
+    </Style>
+
+    <Style Selector="Button.fab">
+        <Setter Property="Foreground" Value="{DynamicResource BrushOnAccent}" />
+        <Setter Property="CornerRadius" Value="30" />
+        <Setter Property="Width" Value="60" />
+        <Setter Property="Height" Value="60" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Light" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0" Color="{DynamicResource BrandA}" />
+                    <GradientStop Offset="1" Color="{DynamicResource BrandB}" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        BoxShadow="{DynamicResource ShadowFab}"
+                        ClipToBounds="True">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.fab:pointerover /template/ Border#chrome">
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowFabHover}" />
+    </Style>
+    <Style Selector="Button.fab:pressed /template/ Border#chrome">
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowFabPressed}" />
+    </Style>
+
+    <!-- Wallet card tile -->
+    <Style Selector="Button.tcardtile">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="Transparent"
+                        CornerRadius="22"
+                        RenderTransformOrigin="50%,50%"
+                        BoxShadow="{DynamicResource ShadowTileIdle}">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tcardtile:pointerover /template/ Border#chrome">
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowTileHover}" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1.02" ScaleY="1.02" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tcardtile:pressed /template/ Border#chrome">
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowTilePressed}" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="0.985" ScaleY="0.985" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Kind picker option -->
+    <Style Selector="Button.kindopt">
+        <Setter Property="Background" Value="{DynamicResource BrushSurface}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <Border Name="chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        BoxShadow="{DynamicResource ShadowTileIdle}"
+                        ClipToBounds="True">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.kindopt:pointerover /template/ Border#chrome">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource ShadowTileHover}" />
+    </Style>
+
+    <!-- Card face chip -->
+    <Style Selector="Border.swatch">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="CornerRadius" Value="17" />
+        <Setter Property="BoxShadow" Value="0 3 8 0 #22000000" />
+    </Style>
+
+    <!-- Colour swatch picker button -->
+    <Style Selector="Button.swchip">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter Name="PART_ContentPresenter"
+                                  Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}" />
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+</Styles>

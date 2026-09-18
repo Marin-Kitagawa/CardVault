@@ -1,0 +1,67 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         ATELIER — washi paper, sumi ink, one vermillion mark.
+         Swapped in at runtime by ThemeService (all values dynamic).
+         ============================================================ -->
+
+    <SolidColorBrush x:Key="BrushAppBg"        Color="#F3EEE1" />
+    <SolidColorBrush x:Key="BrushSurface"      Color="#FBF7EA" />
+    <SolidColorBrush x:Key="BrushSurfaceAlt"   Color="#EFE7D6" />
+    <SolidColorBrush x:Key="BrushSurfaceHigh"  Color="#E7DCC6" />
+    <SolidColorBrush x:Key="BrushStroke"       Color="#D3C8B0" />
+    <SolidColorBrush x:Key="BrushStrokeSoft"   Color="#DFD6C2" />
+
+    <SolidColorBrush x:Key="BrushText"         Color="#221E18" />
+    <SolidColorBrush x:Key="BrushTextMuted"    Color="#6B6355" />
+    <SolidColorBrush x:Key="BrushTextFaint"    Color="#8F8675" />
+
+    <SolidColorBrush x:Key="BrushAccent"        Color="#C93B2A" />
+    <SolidColorBrush x:Key="BrushAccentHover"   Color="#D74A38" />
+    <SolidColorBrush x:Key="BrushAccentPressed" Color="#A02E1F" />
+    <SolidColorBrush x:Key="BrushAccentSoft"    Color="#C93B2A1F" />
+    <SolidColorBrush x:Key="BrushOnAccent"      Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="BrushSuccess"      Color="#2F7D5B" />
+    <SolidColorBrush x:Key="BrushDanger"       Color="#A63A2A" />
+    <SolidColorBrush x:Key="BrushDangerSoft"   Color="#A63A2A14" />
+    <SolidColorBrush x:Key="BrushDangerBorder" Color="#A63A2A55" />
+    <SolidColorBrush x:Key="BrushGold"         Color="#C9A227" />
+
+    <SolidColorBrush x:Key="BrushInputBg"      Color="#FFFDF6" />
+    <SolidColorBrush x:Key="BrushInputBorder"  Color="#BFB499" />
+    <SolidColorBrush x:Key="BrushSelectionBg"  Color="#C93B2A55" />
+    <SolidColorBrush x:Key="BrushSelectionText" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="BrushGhostBg"        Color="#F7F1E2" />
+    <SolidColorBrush x:Key="BrushGhostHover"     Color="#EDE3CE" />
+    <SolidColorBrush x:Key="BrushGhostPressed"   Color="#E2D5BC" />
+    <SolidColorBrush x:Key="BrushPrimaryDisabled" Color="#DDD2BA" />
+    <SolidColorBrush x:Key="BrushIconHover"      Color="#E7DCC4" />
+
+    <!-- glows & brand marks -->
+    <SolidColorBrush x:Key="BrushAccentGlow"   Color="#C93B2A22" />
+    <SolidColorBrush x:Key="BrushTileGlow"     Color="#22A63A2A" />
+
+    <Color x:Key="GateGlowA">#1EC9A227</Color>
+    <Color x:Key="GateGlowB">#0FC9A227</Color>
+    <Color x:Key="BrandA">#C93B2A</Color>
+    <Color x:Key="BrandB">#7E2318</Color>
+
+    <!-- type -->
+    <x:String x:Key="FontDisplay">Shippori Mincho</x:String>
+    <x:String x:Key="FontBody">Yu Gothic UI, Meiryo, Microsoft YaHei UI</x:String>
+    <x:String x:Key="FontMono">Cascadia Mono, Consolas</x:String>
+    <x:String x:Key="FontDigits">Shippori Mincho</x:String>
+
+    <!-- shadows -->
+    <BoxShadows x:Key="ShadowFocus">0 0 0 4 #2EC93B2A</BoxShadows>
+    <BoxShadows x:Key="ShadowFab">0 10 26 0 #40C93B2A</BoxShadows>
+    <BoxShadows x:Key="ShadowFabHover">0 14 34 0 #66C93B2A</BoxShadows>
+    <BoxShadows x:Key="ShadowFabPressed">0 6 14 0 #40C93B2A</BoxShadows>
+    <BoxShadows x:Key="ShadowTileIdle">0 12 30 0 #2E2A1F14</BoxShadows>
+    <BoxShadows x:Key="ShadowTileHover">0 16 38 0 #44C93B2A</BoxShadows>
+    <BoxShadows x:Key="ShadowTilePressed">0 6 16 0 #332A1F14</BoxShadows>
+
+</ResourceDictionary>

@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="680"
+        x:DataType="vm:KindPickerViewModel"
+        x:Class="CardVault.Views.KindPickerWindow"
+        Title="Add to vault"
+        Width="520" Height="680" MinWidth="460" MinHeight="560"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <StackPanel Spacing="3">
+                <TextBlock Text="Add to vault" Classes="h2" />
+                <TextBlock Text="What are you storing?" Classes="muted" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="tlink" Content="Cancel" Command="{Binding CancelCommand}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Margin="26,16,26,18">
+            <ItemsControl ItemsSource="{Binding Options}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="10" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:KindOptionViewModel">
+                        <Button Classes="kindopt" Command="{Binding SelectCommand}" Padding="0">
+                            <Grid ColumnDefinitions="Auto,*" Margin="16,13">
+                                <Border Width="46" Height="46" CornerRadius="23"
+                                        Background="{DynamicResource BrushSurfaceHigh}"
+                                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                                    <Path Data="{Binding Icon}" Stroke="{DynamicResource BrushAccent}"
+                                          StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round"
+                                          Fill="Transparent" Width="22" Height="22" Stretch="Uniform" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Margin="14,0,0,0">
+                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Blurb}" Classes="muted" FontSize="12.5"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="2" Classes="faint" Margin="26,0,26,22"
+                   Text="Everything you store is encrypted with your master password." />
+    </Grid>
+</Window>

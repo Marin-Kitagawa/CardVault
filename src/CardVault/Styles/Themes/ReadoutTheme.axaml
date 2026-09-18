@@ -1,0 +1,68 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         READOUT — bedside clock / gas-station totem.
+         Seven-segment digits, one amber signal, black glass.
+         Swapped in at runtime by ThemeService (all values dynamic).
+         ============================================================ -->
+
+    <SolidColorBrush x:Key="BrushAppBg"        Color="#0A0B0E" />
+    <SolidColorBrush x:Key="BrushSurface"      Color="#111317" />
+    <SolidColorBrush x:Key="BrushSurfaceAlt"   Color="#16191E" />
+    <SolidColorBrush x:Key="BrushSurfaceHigh"  Color="#1C2027" />
+    <SolidColorBrush x:Key="BrushStroke"       Color="#262B33" />
+    <SolidColorBrush x:Key="BrushStrokeSoft"   Color="#1F232A" />
+
+    <SolidColorBrush x:Key="BrushText"         Color="#EDF1F5" />
+    <SolidColorBrush x:Key="BrushTextMuted"    Color="#8A949E" />
+    <SolidColorBrush x:Key="BrushTextFaint"    Color="#5D666F" />
+
+    <SolidColorBrush x:Key="BrushAccent"        Color="#FFB300" />
+    <SolidColorBrush x:Key="BrushAccentHover"   Color="#FFC433" />
+    <SolidColorBrush x:Key="BrushAccentPressed" Color="#C77E00" />
+    <SolidColorBrush x:Key="BrushAccentSoft"    Color="#FFB30022" />
+    <SolidColorBrush x:Key="BrushOnAccent"      Color="#14110C" />
+
+    <SolidColorBrush x:Key="BrushSuccess"      Color="#31D37B" />
+    <SolidColorBrush x:Key="BrushDanger"       Color="#FF5A5A" />
+    <SolidColorBrush x:Key="BrushDangerSoft"   Color="#FF5A5A16" />
+    <SolidColorBrush x:Key="BrushDangerBorder" Color="#FF5A5A55" />
+    <SolidColorBrush x:Key="BrushGold"         Color="#FFD24D" />
+
+    <SolidColorBrush x:Key="BrushInputBg"      Color="#0E1013" />
+    <SolidColorBrush x:Key="BrushInputBorder"  Color="#343A44" />
+    <SolidColorBrush x:Key="BrushSelectionBg"  Color="#FFB30044" />
+    <SolidColorBrush x:Key="BrushSelectionText" Color="#0A0B0E" />
+
+    <SolidColorBrush x:Key="BrushGhostBg"        Color="#131519" />
+    <SolidColorBrush x:Key="BrushGhostHover"     Color="#1A1D22" />
+    <SolidColorBrush x:Key="BrushGhostPressed"   Color="#21252C" />
+    <SolidColorBrush x:Key="BrushPrimaryDisabled" Color="#24272D" />
+    <SolidColorBrush x:Key="BrushIconHover"      Color="#1F232A" />
+
+    <!-- glows & brand marks -->
+    <SolidColorBrush x:Key="BrushAccentGlow"   Color="#FFB30028" />
+    <SolidColorBrush x:Key="BrushTileGlow"     Color="#26FFB300" />
+
+    <Color x:Key="GateGlowA">#17FFB300</Color>
+    <Color x:Key="GateGlowB">#0EFFB300</Color>
+    <Color x:Key="BrandA">#FFB300</Color>
+    <Color x:Key="BrandB">#A56700</Color>
+
+    <!-- type -->
+    <x:String x:Key="FontDisplay">Barlow Condensed</x:String>
+    <x:String x:Key="FontBody">JetBrains Mono</x:String>
+    <x:String x:Key="FontMono">JetBrains Mono</x:String>
+    <x:String x:Key="FontDigits">avares://CardVault/Assets/Fonts/DSEG7Classic-Bold.ttf#DSEG7 Classic</x:String>
+
+    <!-- shadows -->
+    <BoxShadows x:Key="ShadowFocus">0 0 0 4 #33FFB300</BoxShadows>
+    <BoxShadows x:Key="ShadowFab">0 10 26 0 #55FFB300</BoxShadows>
+    <BoxShadows x:Key="ShadowFabHover">0 14 34 0 #88FFB300</BoxShadows>
+    <BoxShadows x:Key="ShadowFabPressed">0 6 14 0 #55FFB300</BoxShadows>
+    <BoxShadows x:Key="ShadowTileIdle">0 12 30 0 #3D000000</BoxShadows>
+    <BoxShadows x:Key="ShadowTileHover">0 16 38 0 #66FFB300</BoxShadows>
+    <BoxShadows x:Key="ShadowTilePressed">0 6 16 0 #3D000000</BoxShadows>
+
+</ResourceDictionary>

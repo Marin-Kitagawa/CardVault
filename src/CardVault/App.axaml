@@ -1,0 +1,25 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:CardVault.Converters"
+             x:Class="CardVault.App">
+
+    <Application.Resources>
+        <!-- Palette brushes + fonts are injected at startup by ThemeService
+             (Styles/Themes/AtelierTheme.axaml / ReadoutTheme.axaml) so all
+             surfaces can re-skin live via DynamicResource. -->
+
+        <!-- ===== Converters ===== -->
+        <conv:NonEmptyToVisibilityConverter x:Key="NonEmptyToVis" />
+        <conv:StringEmptyToBoolConverter     x:Key="StringEmptyToBool" />
+        <conv:InverseBoolConverter         x:Key="InverseBool" />
+        <conv:BoolToThicknessConverter     x:Key="BoolToThickness" />
+        <conv:StringToBrushConverter       x:Key="StringToBrush" />
+
+        <!-- ===== Card palettes: [auto-from-brand index shown below] ===== -->
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://CardVault/Styles/Theme.axaml" />
+    </Application.Styles>
+</Application>
