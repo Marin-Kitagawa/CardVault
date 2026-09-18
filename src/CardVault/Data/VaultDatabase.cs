@@ -50,12 +50,31 @@ public sealed class VaultDatabase : IDisposable
                 brand      TEXT NOT NULL,
                 accent     INTEGER NOT NULL DEFAULT -1,
                 secure     BLOB NOT NULL,
+                tags       TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
             """;
         cmd.ExecuteNonQuery();
         MigrateLegacyCards();
+        EnsureColumn("entries", "tags", "TEXT NOT NULL DEFAULT ''");
+    }
+
+    private void EnsureColumn(string table, string column, string definition)
+    {
+        lock (_sync)
+        using (var probe = _conn!.CreateCommand())
+        {
+            probe.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name";
+            probe.Parameters.AddWithValue("$name", column);
+            if (Convert.ToInt64(probe.ExecuteScalar() ?? 0L) > 0) return;
+        }
+
+        Execute(c =>
+        {
+            c.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition}";
+            c.ExecuteNonQuery();
+        });
     }
 
     /// <summary>Migrate a pre-kinds vault file (cards table) into entries.</summary>
@@ -142,16 +161,18 @@ public sealed class VaultDatabase : IDisposable
 
     // ============================= entries =============================
 
-    public VaultEntry CreateCard(string name, string brand, int accent, CardSecureData data)
+    public VaultEntry CreateCard(string name, string brand, int accent, CardSecureData data, string tags = "")
     {
         var entry = NewEntry(name, EntryKind.Card, brand, accent);
+        entry.Tags = tags;
         entry.SecureBlob = EncryptPayload(entry, data);
         return entry;
     }
 
-    public VaultEntry CreateEntry(string name, EntryKind kind, int accent, EntrySecureData data)
+    public VaultEntry CreateEntry(string name, EntryKind kind, int accent, EntrySecureData data, string tags = "")
     {
         var entry = NewEntry(name, kind, string.Empty, accent);
+        entry.Tags = tags;
         entry.SecureBlob = EncryptPayload(entry, data);
         return entry;
     }
@@ -184,29 +205,26 @@ public sealed class VaultDatabase : IDisposable
         }
     }
 
-    public void UpdateCard(VaultEntry entry, string name, string brand, int accent, CardSecureData data)
+    public void UpdateCard(VaultEntry entry, string name, string brand, int accent, CardSecureData data, string tags = "")
     {
         entry.Kind = EntryKind.Card;
         entry.Name = name;
         entry.Brand = brand;
         entry.Accent = accent;
+        entry.Tags = tags;
         entry.UpdatedAt = DateTimeOffset.UtcNow;
         entry.SecureBlob = EncryptPayload(entry, data);
         UpdateEntryRow(entry);
     }
 
-    public void UpdateEntry(VaultEntry entry, string name, int accent, EntrySecureData data)
-    {
-        entry.Kind = EntryKind.Card; // never happens; kept for symmetry
-        throw new System.NotSupportedException();
-    }
-
-    public void UpdateEntryData(VaultEntry entry, string name, EntryKind kind, int accent, EntrySecureData data)
+    public void UpdateEntryData(VaultEntry entry, string name, EntryKind kind, int accent, EntrySecureData data,
+        string tags = "")
     {
         entry.Kind = kind;
         entry.Name = name;
         entry.Brand = string.Empty;
         entry.Accent = accent;
+        entry.Tags = tags;
         entry.UpdatedAt = DateTimeOffset.UtcNow;
         entry.SecureBlob = EncryptPayload(entry, data);
         UpdateEntryRow(entry);
@@ -230,8 +248,8 @@ public sealed class VaultDatabase : IDisposable
     public void InsertEntry(VaultEntry entry) => Execute(c =>
     {
         c.CommandText = """
-            INSERT INTO entries(id, kind, name, brand, accent, secure, created_at, updated_at)
-            VALUES ($id, $kind, $name, $brand, $accent, $secure, $created, $updated)
+            INSERT INTO entries(id, kind, name, brand, accent, secure, tags, created_at, updated_at)
+            VALUES ($id, $kind, $name, $brand, $accent, $secure, $tags, $created, $updated)
             """;
         BindEntry(c, entry);
         c.ExecuteNonQuery();
@@ -240,7 +258,7 @@ public sealed class VaultDatabase : IDisposable
     public void UpdateEntryRow(VaultEntry entry) => Execute(c =>
     {
         c.CommandText = """
-            UPDATE entries SET kind=$kind, name=$name, brand=$brand, accent=$accent, secure=$secure, updated_at=$updated
+            UPDATE entries SET kind=$kind, name=$name, brand=$brand, accent=$accent, secure=$secure, tags=$tags, updated_at=$updated
             WHERE id=$id
             """;
         BindEntry(c, entry);
@@ -260,7 +278,7 @@ public sealed class VaultDatabase : IDisposable
         lock (_sync)
         using (var cmd = _conn!.CreateCommand())
         {
-            cmd.CommandText = "SELECT id, kind, name, brand, accent, secure, created_at, updated_at FROM entries ORDER BY updated_at DESC";
+            cmd.CommandText = "SELECT id, kind, name, brand, accent, secure, tags, created_at, updated_at FROM entries ORDER BY updated_at DESC";
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -275,7 +293,7 @@ public sealed class VaultDatabase : IDisposable
         lock (_sync)
         using (var cmd = _conn!.CreateCommand())
         {
-            cmd.CommandText = "SELECT id, kind, name, brand, accent, secure, created_at, updated_at FROM entries WHERE id=$id";
+            cmd.CommandText = "SELECT id, kind, name, brand, accent, secure, tags, created_at, updated_at FROM entries WHERE id=$id";
             cmd.Parameters.AddWithValue("$id", id);
             using var reader = cmd.ExecuteReader();
             return reader.Read() ? ReadEntry(reader) : null;
@@ -366,6 +384,7 @@ public sealed class VaultDatabase : IDisposable
         c.Parameters.AddWithValue("$brand", r.Brand);
         c.Parameters.AddWithValue("$accent", r.Accent);
         c.Parameters.AddWithValue("$secure", r.SecureBlob);
+        c.Parameters.AddWithValue("$tags", r.Tags);
         c.Parameters.AddWithValue("$created", r.CreatedAt.ToString("O"));
         c.Parameters.AddWithValue("$updated", r.UpdatedAt.ToString("O"));
     }
@@ -383,8 +402,9 @@ public sealed class VaultDatabase : IDisposable
             Brand = reader.GetString(3),
             Accent = reader.GetInt32(4),
             SecureBlob = (byte[])reader.GetValue(5),
-            CreatedAt = DateTimeOffset.Parse(reader.GetString(6)),
-            UpdatedAt = DateTimeOffset.Parse(reader.GetString(7)),
+            Tags = reader.GetString(6),
+            CreatedAt = DateTimeOffset.Parse(reader.GetString(7)),
+            UpdatedAt = DateTimeOffset.Parse(reader.GetString(8)),
         };
     }
 

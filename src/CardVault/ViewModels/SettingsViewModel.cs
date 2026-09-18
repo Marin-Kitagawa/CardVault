@@ -45,6 +45,10 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string newPassword = string.Empty;
     [ObservableProperty] private string confirmPassword = string.Empty;
     [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private bool updateBusy;
+    [ObservableProperty] private bool updateAvailable;
+    [ObservableProperty] private string updateStatus = $"Running v{UpdateService.CurrentVersion}. Check GitHub releases for updates.";
+    [ObservableProperty] private string updateUrl = UpdateService.ReleasesUrl;
 
     public SettingsViewModel(VaultDatabase db, ExportService export, Action onChanged)
     {
@@ -56,8 +60,10 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     public bool IsIdle => !IsBusy;
+    public bool IsUpdateIdle => !UpdateBusy;
 
     partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(IsIdle));
+    partial void OnUpdateBusyChanged(bool value) => OnPropertyChanged(nameof(IsUpdateIdle));
 
     partial void OnSelectedLockChanged(LockOption value) => _db.LockTimeoutMinutes = value.Minutes;
 
@@ -210,6 +216,105 @@ public partial class SettingsViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportCsvAsync()
+    {
+        var owner = AppServices.MainWindow;
+        var proceed = await DialogService.ConfirmAsync(owner, "Plain-text export",
+            "A CSV file is PLAINTEXT — it contains your decrypted values, including any secrets, readable by anyone who opens the file.\n\nThis is different from the encrypted backup. Export anyway?",
+            "Export CSV", "Cancel", danger: true);
+        if (!proceed) return;
+
+        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export as CSV",
+            SuggestedFileName = $"cardvault-{DateTime.Now:yyyyMMdd-HHmmss}",
+            DefaultExtension = CsvExporter.FileExtension,
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("CSV spreadsheet") { Patterns = new[] { $"*.{CsvExporter.FileExtension}" } },
+            },
+        });
+        if (file is null) return;
+
+        var path = file.TryGetLocalPath();
+        if (string.IsNullOrEmpty(path))
+        {
+            await DialogService.ShowAsync(owner, "Export cancelled", "The file location could not be used.");
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var bytes = await Task.Run(() =>
+            {
+                var entries = _db.ListEntries();
+                var payloads = new List<object?>();
+                foreach (var entry in entries)
+                    payloads.Add(EntryKinds.IsCard(entry.Kind)
+                        ? (object?)_db.DecryptCard(entry)
+                        : _db.DecryptEntry(entry));
+                return CsvExporter.Export(entries, payloads);
+            });
+
+            await File.WriteAllBytesAsync(path, bytes);
+            await DialogService.ShowAsync(owner, "Export complete",
+                $"Plain-text CSV written to:\n{path}\n\nTreat this file like a password — it is not encrypted.");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowAsync(owner, "Export failed", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        UpdateBusy = true;
+        try
+        {
+            var result = await Task.Run(() => UpdateService.CheckAsync().GetAwaiter().GetResult());
+            if (result.Error is not null)
+            {
+                UpdateAvailable = false;
+                UpdateStatus = $"Could not check for updates: {result.Error}";
+            }
+            else if (result.HasUpdate && result.Latest is not null)
+            {
+                UpdateAvailable = true;
+                UpdateUrl = result.Page ?? UpdateService.ReleasesUrl;
+                UpdateStatus = $"A newer version (v{result.Latest}) is available. You are running v{UpdateService.CurrentVersion}.";
+            }
+            else
+            {
+                UpdateAvailable = false;
+                UpdateStatus = $"You are up to date — running v{UpdateService.CurrentVersion}.";
+            }
+        }
+        finally
+        {
+            UpdateBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenUpdatePage()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
+        }
+        catch
+        {
+            // No browser available; the status text already shows the version.
         }
     }
 

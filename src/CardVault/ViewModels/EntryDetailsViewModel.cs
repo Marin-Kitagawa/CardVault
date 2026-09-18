@@ -134,6 +134,30 @@ public partial class EntryDetailsViewModel : ViewModelBase
     private void Done() => RequestClose?.Invoke();
 
     [RelayCommand]
+    private void ShareQr()
+    {
+        var options = new List<QrValueOption> { new("Entry name", _entry.Name) };
+        if (IsCard)
+        {
+            if (Revealed && _card is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(_card.Holder)) options.Add(new QrValueOption("Cardholder name", _card.Holder));
+                if (!string.IsNullOrWhiteSpace(_card.Number)) options.Add(new QrValueOption("Card number", _card.Number));
+                if (!string.IsNullOrWhiteSpace(_card.Cvv)) options.Add(new QrValueOption("Security code", _card.Cvv));
+            }
+        }
+        else
+        {
+            foreach (var row in Rows.Where(r => r.Revealed))
+                options.Add(new QrValueOption(row.Name, row.Value));
+        }
+
+        var vm = new QrViewModel(options);
+        var window = new QrWindow { DataContext = vm };
+        window.ShowDialog(AppServices.MainWindow);
+    }
+
+    [RelayCommand]
     private void Edit()
     {
         RequestClose?.Invoke();
@@ -178,6 +202,8 @@ public partial class SecretRowViewModel : ViewModelBase
     }
 
     public string Name { get; }
+
+    public string Value => _value;
 
     public string ValueShown => Revealed ? _value : Mask;
     public string RevealLabel => Revealed ? "Hide" : "Reveal";

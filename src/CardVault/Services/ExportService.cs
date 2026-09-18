@@ -49,6 +49,7 @@ public sealed class ExportService
                 Name = e.Name,
                 Brand = e.Brand,
                 Accent = e.Accent,
+                Tags = e.Tags,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt,
                 // card fields
@@ -124,6 +125,7 @@ public sealed class ExportService
                 Name = c.Name,
                 Brand = c.Brand ?? string.Empty,
                 Accent = c.Accent,
+                Tags = c.Tags ?? string.Empty,
                 CreatedAt = c.CreatedAt,
                 UpdatedAt = c.UpdatedAt,
             };
@@ -185,6 +187,7 @@ internal sealed class ExportEntry
     public string Name { get; set; } = string.Empty;
     public string Brand { get; set; } = string.Empty;
     public int Accent { get; set; } = -1;
+    public string Tags { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string Holder { get; set; } = string.Empty;

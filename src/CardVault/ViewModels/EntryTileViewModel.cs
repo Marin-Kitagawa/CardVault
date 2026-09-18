@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using CardVault.Models;
@@ -21,6 +23,7 @@ public partial class EntryTileViewModel : ViewModelBase
         Name = entry.Name;
         IsCard = EntryKinds.IsCard(entry.Kind);
         Icon = GetIcon(entry.Kind);
+        Tags = entry.Tags;
 
         if (IsCard)
         {
@@ -56,6 +59,8 @@ public partial class EntryTileViewModel : ViewModelBase
     public Color ColorStart { get; }
     public Color ColorEnd { get; }
     public string BrandLabel { get; } = string.Empty;
+    public string Tags { get; } = string.Empty;
+    public string TagsText => Tags.Length == 0 ? string.Empty : string.Join("  ", Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(3));
 
     public CommunityToolkit.Mvvm.Input.IRelayCommand OpenCommand { get; }
 

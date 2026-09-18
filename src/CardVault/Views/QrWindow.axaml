@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CardVault.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="540"
+        x:DataType="vm:QrViewModel"
+        x:Class="CardVault.Views.QrWindow"
+        Title="Share as QR"
+        Width="420" Height="540" MinWidth="380" MinHeight="480"
+        WindowStartupLocation="CenterOwner" CanResize="False">
+
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource BrushAppBg}">
+
+        <Grid ColumnDefinitions="*,Auto" Margin="26,22,18,0">
+            <StackPanel Spacing="3">
+                <TextBlock Text="Share as QR" Classes="h2" />
+                <TextBlock Classes="muted" Text="Scan this on another device." />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="tlink" Content="Close" Command="{Binding DoneCommand}"
+                    VerticalAlignment="Center" />
+        </Grid>
+
+        <StackPanel Grid.Row="1" Margin="26,16,26,18" Spacing="14">
+
+            <ComboBox ItemsSource="{Binding Options}"
+                      SelectedItem="{Binding SelectedOption}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:QrValueOption">
+                        <TextBlock Text="{Binding Label}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Border Background="White" CornerRadius="18" Padding="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image Source="{Binding QrSource}" Width="256" Height="256" Stretch="Uniform" />
+            </Border>
+
+            <TextBlock Text="{Binding Status}" Classes="muted" HorizontalAlignment="Center" TextAlignment="Center"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="26,14,26,22">
+            <Button Classes="tprimary" Content="Done" Command="{Binding DoneCommand}"
+                    HorizontalAlignment="Right" />
+        </Grid>
+    </Grid>
+</Window>

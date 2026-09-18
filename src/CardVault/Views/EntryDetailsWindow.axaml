@@ -193,7 +193,10 @@
         </ScrollViewer>
 
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="26,16,26,22">
-            <Button Grid.Column="0" Classes="ghost" Content="Edit" Command="{Binding EditCommand}" />
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                <Button Classes="ghost" Content="Edit" Command="{Binding EditCommand}" />
+                <Button Classes="ghost" Content="QR" Command="{Binding ShareQrCommand}" />
+            </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
                 <Button Classes="danger" Content="Delete" Command="{Binding DeleteCommand}" />
                 <Button Classes="tprimary" Content="Done" Command="{Binding DoneCommand}" />

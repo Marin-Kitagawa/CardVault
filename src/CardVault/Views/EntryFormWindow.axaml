@@ -171,6 +171,14 @@
                 </StackPanel>
 
                 <StackPanel Spacing="8">
+                    <TextBlock Text="Tags" Classes="eyebrow" />
+                    <TextBox Classes="tcard" Watermark="optional, comma separated"
+                             MaxLength="100" Text="{Binding TagsText, Mode=TwoWay}" />
+                    <TextBlock Classes="faint"
+                               Text="Comma-separated labels (up to 8) shown on the tile and used by search. Not encrypted with the payload." />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
                     <TextBlock Text="Secret entries" Classes="eyebrow" />
                     <TextBlock Classes="faint"
                                Text="Optional. Extra key–value details — recovery codes, security questions, PINs — stored inside the encrypted payload." />

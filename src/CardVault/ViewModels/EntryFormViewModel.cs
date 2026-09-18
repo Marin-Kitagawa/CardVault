@@ -31,6 +31,7 @@ public partial class EntryFormViewModel : ViewModelBase
     [ObservableProperty] private string expiry = string.Empty;
     [ObservableProperty] private string cvv = string.Empty;
     [ObservableProperty] private string notes = string.Empty;
+    [ObservableProperty] private string tagsText = string.Empty;
     [ObservableProperty] private int selectedSwatch;
 
     [ObservableProperty] private string numberHint = "Enter the digits printed on the card";
@@ -99,6 +100,7 @@ public partial class EntryFormViewModel : ViewModelBase
         }
 
         SelectedSwatch = existing is not null ? Math.Clamp(existing.Accent + 1, 0, 8) : 0;
+        TagsText = existing is not null ? DisplayTags(existing.Tags) : string.Empty;
 
         foreach (var def in kind == EntryKind.Card
                      ? Array.Empty<EntryFieldDef>()
@@ -124,6 +126,17 @@ public partial class EntryFormViewModel : ViewModelBase
     private string NumberDigits => new(Number.Where(char.IsDigit).ToArray());
     private string ExpiryDigits => new(Expiry.Where(char.IsDigit).ToArray());
     private int AccentIndex => SelectedSwatch - 1;
+
+    private static string NormalizeTags(string raw)
+        => string.Join(",",
+            raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+               .Select(t => t.ToLowerInvariant())
+               .Where(t => t.Length > 0)
+               .Distinct()
+               .Take(8));
+
+    private static string DisplayTags(string stored)
+        => string.Join(", ", stored.Split(',', StringSplitOptions.RemoveEmptyEntries));
 
     // ---------- live formatting (card kind) ----------
 
@@ -357,14 +370,15 @@ public partial class EntryFormViewModel : ViewModelBase
 
             var brand = CardBrandInfo.Detect(digits).ToString().ToLowerInvariant();
             var accent = AccentIndex;
+            var tags = NormalizeTags(TagsText);
 
             if (_existing is null)
             {
-                AppServices.Database.InsertEntry(AppServices.Database.CreateCard(CardName.Trim(), brand, accent, data));
+                AppServices.Database.InsertEntry(AppServices.Database.CreateCard(CardName.Trim(), brand, accent, data, tags));
             }
             else
             {
-                AppServices.Database.UpdateCard(_existing, CardName.Trim(), brand, accent, data);
+                AppServices.Database.UpdateCard(_existing, CardName.Trim(), brand, accent, data, tags);
             }
         }
         else
@@ -380,13 +394,14 @@ public partial class EntryFormViewModel : ViewModelBase
             };
 
             var accent = AccentIndex;
+            var tags = NormalizeTags(TagsText);
             if (_existing is null)
             {
-                AppServices.Database.InsertEntry(AppServices.Database.CreateEntry(CardName.Trim(), Kind, accent, data));
+                AppServices.Database.InsertEntry(AppServices.Database.CreateEntry(CardName.Trim(), Kind, accent, data, tags));
             }
             else
             {
-                AppServices.Database.UpdateEntryData(_existing, CardName.Trim(), Kind, accent, data);
+                AppServices.Database.UpdateEntryData(_existing, CardName.Trim(), Kind, accent, data, tags);
             }
         }
 

@@ -15,15 +15,20 @@
         </Grid.RowDefinitions>
 
         <!-- header -->
-        <Grid ColumnDefinitions="*,Auto" Margin="30,26,30,12">
-            <StackPanel Spacing="3">
-                <TextBlock Text="CardVault" FontFamily="{DynamicResource FontDisplay}" FontSize="28" FontWeight="Bold" />
-                <TextBlock Text="{Binding Subtitle}" Classes="muted" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <Button Classes="ghost" Command="{Binding LockCommand}" Content="Lock" />
-                <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" Content="Settings" />
-            </StackPanel>
+        <Grid RowDefinitions="Auto,Auto" Margin="30,26,30,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="CardVault" FontFamily="{DynamicResource FontDisplay}" FontSize="28" FontWeight="Bold" />
+                    <TextBlock Text="{Binding Subtitle}" Classes="muted" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="ghost" Command="{Binding LockCommand}" Content="Lock" />
+                    <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" Content="Settings" />
+                </StackPanel>
+            </Grid>
+            <TextBox Grid.Row="1" Margin="0,14,0,0" Classes="tsearch"
+                     Watermark="Search name, kind, brand or tag…"
+                     Text="{Binding SearchText, Mode=TwoWay}" />
         </Grid>
 
         <!-- wallet -->
@@ -65,6 +70,9 @@
                                         <StackPanel Grid.Row="2" Spacing="3">
                                             <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding TagsText}" Classes="muted" FontSize="11"
+                                                       Opacity="0.8" TextTrimming="CharacterEllipsis"
+                                                       IsVisible="{Binding TagsText, Converter={StaticResource NonEmptyToVis}}" />
                                             <TextBlock Text="••••  ••••  ••••  ••••" Classes="muted" FontSize="12"
                                                        Opacity="0.7" />
                                         </StackPanel>
@@ -88,13 +96,16 @@
                       StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
                       Width="60" Height="60" Stretch="Uniform" Margin="16,16,16,16" />
             </Border>
-            <TextBlock Text="No entries yet" Classes="h2" HorizontalAlignment="Center" />
-            <TextBlock Text="Store cards, logins, accounts, identities, notes —" 
-                       Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding EmptyTitle}" Classes="h2" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding EmptyBlurb}" Classes="muted" HorizontalAlignment="Center"
+                       TextAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Text="Store cards, logins, accounts, identities, notes —"
+                       Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                       IsVisible="{Binding HasItems, Converter={StaticResource InverseBool}}" />
             <TextBlock Text="everything stays encrypted with your master password."
                        Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
-                       Margin="0,0,0,10" />
-            <Button Classes="tprimary" Content="Add your first entry" Command="{Binding AddEntryCommand}"
+                       Margin="0,0,0,10" IsVisible="{Binding HasItems, Converter={StaticResource InverseBool}}" />
+            <Button Classes="tprimary" Content="{Binding AddButtonLabel}" Command="{Binding AddEntryCommand}"
                     HorizontalAlignment="Center" />
         </StackPanel>
 

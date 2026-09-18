@@ -12,7 +12,7 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
     </Style>
 
-    <Style Selector="TextBox.tcard, TextBox.tarea">
+    <Style Selector="TextBox.tcard, TextBox.tarea, TextBox.tsearch">
         <Setter Property="FontFamily" Value="{DynamicResource FontBody}" />
     </Style>
 
@@ -160,6 +160,26 @@
     <Style Selector="TextBox.tarea:focus /template/ Border#chrome">
         <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
         <Setter Property="BoxShadow" Value="{DynamicResource ShadowFocus}" />
+    </Style>
+
+    <Style Selector="TextBox.tsearch">
+        <Setter Property="Background" Value="{DynamicResource BrushInputBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushStroke}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushText}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource BrushAccent}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource BrushSelectionBg}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource BrushSelectionText}" />
+        <Setter Property="MinHeight" Value="40" />
+    </Style>
+    <Style Selector="TextBox.tsearch:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushInputBorder}" />
+    </Style>
+    <Style Selector="TextBox.tsearch:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushAccent}" />
     </Style>
 
     <!-- ======================== Password input (TextBox, restyled) ======================== -->

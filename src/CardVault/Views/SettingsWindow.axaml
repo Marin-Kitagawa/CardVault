@@ -80,8 +80,24 @@
                                 Command="{Binding ExportCommand}" />
                         <Button Classes="ghost" Content="Import backup…" HorizontalAlignment="Left"
                                 Command="{Binding ImportCommand}" />
+                        <Button Classes="ghost" Content="Export plain CSV…" HorizontalAlignment="Left"
+                                Command="{Binding ExportCsvCommand}" />
                         <TextBlock Classes="faint" TextWrapping="Wrap"
-                                   Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation." />
+                                   Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation. CSV is the one deliberately plain-text output — you will be warned before it is written." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Updates -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="UPDATES" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <Button Classes="ghost" Content="Check for updates" HorizontalAlignment="Left"
+                                Command="{Binding CheckForUpdatesCommand}" IsEnabled="{Binding IsUpdateIdle}" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" Text="{Binding UpdateStatus}" />
+                        <Button Classes="ghost" Content="Open releases page…" HorizontalAlignment="Left"
+                                Command="{Binding OpenUpdatePageCommand}" IsVisible="{Binding UpdateAvailable}" />
                     </StackPanel>
                 </Border>
 
@@ -115,7 +131,7 @@
                         <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
                                    Text="• The decrypted key lives only in memory and is zeroed the moment the vault locks." />
                         <TextBlock Classes="faint" TextWrapping="Wrap" LineHeight="19"
-                                   Text="• This app performs no network access. Your data never leaves this machine." />
+                                   Text="• The only network call is an optional 'Check for updates' request to the public GitHub releases page. The app never sends your data anywhere." />
                     </StackPanel>
                 </Border>
 

@@ -1,0 +1,263 @@
+= CardVault — User Guide & Technical Reference
+:doctype: book
+:language: en
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlight.js
+:sectanchors:
+
+:appname: CardVault
+:ext: cvault
+:ver: 0.1.0
+
+CardVault is an aesthetic, encrypted-first desktop vault for everything you
+carry in a wallet: payment cards, logins, financial accounts, crypto wallets,
+identities, documents, memberships, gift cards, physical items, and secure
+notes. Every entry is stored as a single AES-256-GCM sealed blob, so the
+on-disk database contains no plaintext.
+
+This document is the complete user guide and technical reference. It contains
+no personal information and is safe to distribute.
+
+== 1. Overview
+
+.A feature tour
+* Ten entry kinds with purpose-built editor templates, tiles, and detail views.
+* Everything sensitive is AES-256-GCM encrypted before it touches the database.
+* Secrets (PINs, passwords, recovery phrases) are masked until deliberately
+  revealed one at a time.
+* Live search across entry name, kind, brand, and tags.
+* Per-entry tags for grouping and quick filtering.
+* Password-protected export/import for backups and machine transfers.
+* One-time CSV export for spreadsheets, plus CSV import.
+* Optional update check against the project's public release feed.
+* Changeable master password that re-encrypts the whole vault.
+* Configurable idle auto-lock and a SEG7-style "seven-segment" display theme.
+
+== 2. Installing
+
+=== 2.1. Requirements
+
+* Windows x64.
+* .NET 8 runtime, or a self-contained publish with no runtime installed.
+
+=== 2.2. From a release
+
+Download the portable single-file build and run the app executable directly.
+No install step or administrator rights are required.
+
+=== 2.3. Self-contained publish
+
+[source,console]
+----
+dotnet publish src/CardVault/CardVault.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+----
+
+The output is a single executable under
+`src/CardVault/bin/Release/net8.0/win-x64/publish/` that runs on machines
+without the .NET runtime.
+
+=== 2.4. Build from source
+
+[source,console]
+----
+dotnet restore CardVault.slnx
+dotnet build CardVault.slnx -c Debug
+dotnet run --project src/CardVault/CardVault.csproj
+----
+
+== 3. Getting started
+
+=== 3.1. Creating a vault
+
+On first launch you are asked to choose a master password. The password must
+be at least 8 characters and include characters from at least *three* of these
+four categories: lowercase, uppercase, digits, symbols. Type it twice to
+confirmasi.
+
+=== 3.2. The home screen
+
+Entries are shown as a grid of tiles. Card entries render as card faces with
+their brand, accent color, and a VFD-style digit display; every other kind
+renders as a pocket tile with a kind glyph Good Gé.
+
+Tiles show the entry's name, kind name, tags, and (for cards) the brand label.
+Clicking a tile opens the detail view; opening a card face reveals its digits.
+
+=== 3.3. Adding an entry
+
+1. Press the primary action button (the large + button).
+2. Pick a kind from the picker.
+3. Fill the form. Fields marked *masked* are stored encrypted and rendered as
+   dots until you choose to reveal them.
+4. Optionally add tags (comma-separated) and notes.
+5. Save. The entry is sealed and inserted.
+
+=== 3.4. Revealing secrets
+
+Sensitive values stay masked. Use the per-item reveal control to temporarily
+show a value, and copy it only while revealed. Revelations never persist —
+closing the entry re-masks everything.
+
+== 4. Entry kinds
+
+Each kind has its own template. A `kind` string in the database drives the
+editor, the tile, and the detail view. The table lists the fields that are
+stored in the encrypted payload.
+
+.Entry kinds
+[cols="1,3"]
+|===
+| Kind | Encrypted template fields
+
+| `card` | Holder, Number, Expiry, CVV, Notes, Secrets
+| `login` | Website/URL, Username, Password, Notes, Secrets
+| `financial` | Institution, Account name, Account number, Routing/BIC, Notes, Secrets
+| `crypto` | Network, Wallet address, Seed phrase, Private key, Notes, Secrets
+| `identity` | Document type, Full name, Document number, Country, Issue/Expiry, Notes, Secrets
+| `document` | Title, Reference, Secure notes, Secrets
+| `membership` | Program, Member ID, Tier, Notes, Secrets
+| `gift` | Store, Card number, PIN, Balance, Expiry, Notes, Secrets
+| `physical` | Item, Location, Combination/Serial, Notes, Secrets
+| `note` | Secure notes, Secrets
+|===
+
+Cards additionally carry brand information (e.g. `visa`, `amex`, `mastercard`,
+custom) and an accent color used for the card-face gradient and digit display.
+
+== 5. Tags & search
+
+* *Tags* are comma-separated labels on each entry (e.g. `travel,rewards`).
+* The search box filters live as you type, matching name, kind, brand, and
+  tags.
+* Tags are stored as plaintext columns in the local database (they are not
+  secret), so they can be indexed for fast filtering.
+
+== 6. Security model
+
+=== 6.1. Encryption at rest
+
+* *Cipher*: AES-256-GCM (authenticated encryption).
+* *Key derivation*: PBKDF2-SHA256 with a random per-vault salt and a high
+  iteration count (tens of thousands; the exporter uses the configured
+  constant).
+* Each entry's payload is a JSON `secure` blob that is `nonce | tag |
+  ciphertext`. The nonce is 12 bytes, the GCM tag 16 bytes.
+* The master password is never stored — only a derived verification hash.
+
+=== 6.2. Reveal discipline
+
+Nothing sensitive is visible until you ask. Copy-to-clipboard is gated behind
+reveal, and details windows are one-at-a-time dialogs so secrets don't linger
+on screen.
+
+=== 6.3. Backup
+
+Use *Export → .{ext} file* to produce an encrypted backup that preserves all
+kinds, names, tags, and encrypted payloads. Keep backups in a location you
+trust and remember the passphrase — there is no recovery without it.
+
+== 7. Export & import
+
+=== 7.1. Encrypted export/import
+
+The `.cvault` format is a compressed envelope of the vault entries and their
+encrypted payloads, sealed with a passphrase using the same key derivation as
+the vault.
+
+[source,console]
+----
+# In the UI: Export → export to a .cvault file.
+# Import on another machine: Export → import .cvault, then choose a passphrase.
+----
+
+Round-trips all ten kinds plus tags and names.
+
+=== 7.2. CSV export
+
+CSV export produces a UTF-8 file with a byte order mark, containing one row
+per entry: kind, name, tags, and revealed field/secret labels and values.
+Use for spreadsheets when you accept plaintext output. The first three bytes
+are `EF BB BF` so Excel detects UTF-8.
+
+=== 7.3. CSV import
+
+CSV import reads the same format back in, mapping each column to an entry and
+encrypting the values before storage.
+
+== 8. Settings
+
+* *Change master password*: requires the current password; re-encrypts every
+  entry under the new derived key.
+* *Auto-lock*: lock the vault after a configurable idle timeout.
+* *Themes*: Atelier (default), and Readout with the SEG7 seven-segment
+  character display for the card-face digits.
+* *Update check*: optional, checks the public release feed. It is the only
+  network call the app makes.
+
+== 9. How CardVault works under the hood
+
+=== 9.1. Storage
+
+The vault is a single SQLite database file located in the per-user
+application-data directory. Two core tables:
+
+* `meta` — key/value store: `kdf_salt`, `kdf_iter`, `master_hash`, `version`,
+  plus application metadata such as theme and lock timeout.
+* `entries` — one row per entry: `id`, `kind`, `name`, `brand`, `accent`,
+  `tags`, `secure` (the encrypted `nonce|tag|ciphertext` blob), `created_at`,
+  `updated_at`.
+
+=== 9.2. Migration
+
+Opening a database created by an older schema detects and migrates it:
+
+* A legacy `cards` table is migrated into the unified `entries` table with
+  `kind = 'card'`.
+* Missing columns (e.g. `tags`) are added to existing entries tables so old
+  vaults keep working without data loss.
+
+There is no plaintext in either table — the `secure` blob stays opaque.
+
+=== 9.3. Key derivation & master verification
+
+`DeriveKey(passphrase, salt, iterations)` = PBKDF2-SHA256. The derived key
+unlocks/encrypts entries; a separate derived value stored in `master_hash`
+verifies the passphrase without storing it. On change, all `secure` blobs are
+re-sealed with the new key.
+
+== 10. Command summary
+
+|===
+| Action | Entry or UI
+| Add entry | primary + button → picker → form
+| Reveal a secret | per-item reveal control
+| Copy a revealed secret | copy button (only while revealed)
+| Filter | search box (name/kind/brand/tags)
+| Back up | Export → .cvault (encrypted)
+| Spreadsheet | Export → CSV (plaintext)
+| Change password | Settings → Security
+| Lock now / auto-lock | lock control / Settings timeout
+|===
+
+== 11. Troubleshooting
+
+*Forgot the master password?* There is no recovery path by design. Use a
+current backup.
+*Vault won't open?* Confirm the file path points at a valid vault; corrupted
+files error out and are left untouched.
+*CSV looks mangled in Excel?* The export writes UTF-8 with BOM; if your
+environment shows mojibake, re-import via the app's CSV importer instead.
+
+== 12. Roadmap
+
+* Native auto-backup scheduling.
+* Browser-style entry templates for more identity documents.
+* Cross-device sync (encrypted, opt-in) in a later release.
+
+== Appendix A: Format notes
+
+The rotated-font aesthetic is implemented with hand-built tile styles rather
+than additional dependencies. Future work may switch the seven-segment display
+to a bundled font if bravav regularity requires it.
