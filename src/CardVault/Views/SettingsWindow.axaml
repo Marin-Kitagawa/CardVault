@@ -80,10 +80,12 @@
                                 Command="{Binding ExportCommand}" />
                         <Button Classes="ghost" Content="Import backup…" HorizontalAlignment="Left"
                                 Command="{Binding ImportCommand}" />
+                        <Button Classes="ghost" Content="Import KeePass database…" HorizontalAlignment="Left"
+                                Command="{Binding ImportKeepassCommand}" />
                         <Button Classes="ghost" Content="Export plain CSV…" HorizontalAlignment="Left"
                                 Command="{Binding ExportCsvCommand}" />
                         <TextBlock Classes="faint" TextWrapping="Wrap"
-                                   Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation. CSV is the one deliberately plain-text output — you will be warned before it is written." />
+                                   Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation. KeePass imports read password-protected KDBX 3.x files (groups and entries) and store them inside your vault. CSV is the one deliberately plain-text output — you will be warned before it is written." />
                     </StackPanel>
                 </Border>
 

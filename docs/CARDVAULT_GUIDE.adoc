@@ -33,6 +33,7 @@ no personal information and is safe to distribute.
   friendly, navigable tree.
 * Password-protected export/import for backups and machine transfers.
 * One-time CSV export for spreadsheets, plus CSV import.
+* KeePass 2 (KDBX 3.x) database import from the settings screen.
 * Optional update check against the project's public release feed.
 * Changeable master password that re-encrypts the whole vault.
 * Configurable idle auto-lock and a SEG7-style "seven-segment" display theme.
@@ -235,6 +236,39 @@ are `EF BB BF` so Excel detects UTF-8.
 
 CSV import reads the same format back in, mapping each column to an entry and
 encrypting the values before storage.
+
+=== 9.4. KeePass import
+
+*Settings → KeePass import* reads a KeePass 2 database (`.kdbx`) and copies its
+groups and entries into the vault. The original file is never modified.
+
+For compatibility, the recorder reads KDBX 3.x files with:
+
+* AES-256-CBC encryption with the AES-KDF key transform, password-only
+  credentials;
+* the Salsa20 "inner random stream" (`\r\n\r\n` EndOfHeader field and the KDBX
+  hadhed-block trailer as KeePass/X writes them);
+* optional gzip-compressed payloads.
+
+Entries are mapped heuristically:
+
+* *Groups* become folders (nested structure, icons default to `folder`). The
+  root group itself is not recreated; its entries land at the top level.
+  Recycle Bin and backups groups are imported as ordinary folders.
+* An entry is treated as a *card* when it stores a card-like number plus an
+  expiry or CVV; the brand is detected from the number prefix (Visa, Mastercard,
+  Amex, …). Expiry and holder strings are canonicalized where possible.
+* All other entries map to their best-fitting kind:
+  `login` when the entry has a username/password or website,
+  `document` when it carries custom fields, otherwise `note`.
+* Protected values (the KeePass-protected username/password/attributes) are
+  decrypted in document order and stored in the matching CardVault fields or as
+  `SecretEntry` rows.
+* Custom fields are kept as secrets so no information is lost.
+
+Files that are not recognizable KeePass 2 vaults, use unsupported ciphers or
+inner-stream algorithms, fail their header-hash check, or reject the entered
+password are reported clearly and left untouched.
 
 == 10. Settings
 

@@ -20,6 +20,7 @@ public partial class SettingsViewModel : ViewModelBase
 {
     private readonly VaultDatabase _db;
     private readonly ExportService _export;
+    private readonly KeepassImportService _keepass;
     private readonly Action _onChanged;
 
     public event Action? RequestClose;
@@ -54,6 +55,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _db = db;
         _export = export;
+        _keepass = new KeepassImportService(db);
         _onChanged = onChanged;
         SelectedLock = LockOptions.FirstOrDefault(x => x.Minutes == db.LockTimeoutMinutes) ?? LockOptions[1];
         SelectedTheme = ThemeOptions.FirstOrDefault(x => x.Kind == ThemeService.Current) ?? ThemeOptions[0];
@@ -212,6 +214,53 @@ public partial class SettingsViewModel : ViewModelBase
         catch (Exception ex)
         {
             await DialogService.ShowAsync(owner, "Import failed", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportKeepassAsync()
+    {
+        var owner = AppServices.MainWindow;
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import KeePass database",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("KeePass 2 database") { Patterns = new[] { "*.kdbx", "*.kdb" } },
+                new FilePickerFileType("All files") { Patterns = new[] { "*" } },
+            },
+        });
+        if (files.Count == 0) return;
+
+        var path = files[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(path)) return;
+
+        var passphrase = await DialogService.AskPassphraseAsync(owner, "KeePass password",
+            "Enter the password that opens this KeePass database. Only password-protected KDBX 3.x files are supported.",
+            requireConfirm: false);
+        if (passphrase is null) return;
+
+        IsBusy = true;
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                var bytes = File.ReadAllBytes(path);
+                return _keepass.Import(bytes, passphrase);
+            });
+
+            _onChanged?.Invoke();
+            await DialogService.ShowAsync(owner, "Import complete",
+                $"Imported {result.Entries} item{(result.Entries == 1 ? "" : "s")} into {result.Folders} folder{(result.Folders == 1 ? "" : "s")}.\n\nGroups become folders, and entries become items. KeePass passwords and secrets are stored inside your encrypted vault like any other entry.");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowAsync(owner, "KeePass import failed", ex.Message);
         }
         finally
         {
