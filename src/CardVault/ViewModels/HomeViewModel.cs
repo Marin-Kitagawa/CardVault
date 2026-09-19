@@ -282,7 +282,7 @@ public partial class HomeViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenSettings()
     {
-        var vm = new SettingsViewModel(AppServices.Database, AppServices.Export, Refresh);
+        var vm = new SettingsViewModel(AppServices.Database, AppServices.Export, AppServices.AutoBackup, AppServices.Sync, Refresh);
         var window = new SettingsWindow { DataContext = vm };
         await window.ShowDialog(AppServices.MainWindow);
         Refresh();

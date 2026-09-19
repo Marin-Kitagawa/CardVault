@@ -46,12 +46,9 @@ public partial class EntryDetailsViewModel : ViewModelBase
         else if (payload is EntrySecureData generic)
         {
             _generic = generic;
-            foreach (var def in EntryKinds.For(entry.Kind).Fields)
-            {
-                var value = generic.Fields.FirstOrDefault(f => f.Label == def.Label)?.Value ?? string.Empty;
-                if (value.Length > 0)
-                    Rows.Add(new SecretRowViewModel(def.Label, value));
-            }
+            foreach (var f in (generic.Fields ?? new List<EntryField>())
+                         .Where(f => !string.IsNullOrWhiteSpace(f.Label) && !string.IsNullOrWhiteSpace(f.Value)))
+                Rows.Add(new SecretRowViewModel(f.Label.Trim(), f.Value.Trim()));
 
             foreach (var s in (generic.Secrets ?? new List<SecretEntry>())
                          .Where(x => !string.IsNullOrWhiteSpace(x.Name) || !string.IsNullOrWhiteSpace(x.Value)))

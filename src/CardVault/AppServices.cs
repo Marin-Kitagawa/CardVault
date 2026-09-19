@@ -15,6 +15,8 @@ public static class AppServices
     public static VaultDatabase Database { get; private set; } = null!;
     public static ExportService Export { get; } = new();
     public static AutoLockService AutoLock { get; } = new();
+    public static AutoBackupService AutoBackup { get; private set; } = null!;
+    public static SyncService Sync { get; private set; } = null!;
     public static Window MainWindow { get; set; } = null!;
     public static MainWindowViewModel MainVM { get; private set; } = null!;
 
@@ -23,11 +25,16 @@ public static class AppServices
         Database = new VaultDatabase(AppPaths.DatabasePath, Session);
         Database.Open();
 
+        AutoBackup = new AutoBackupService(Database, Session, Export);
+        Sync = new SyncService(Database, Session);
+
         var isNew = !Database.HasMasterKey;
         var setup = new SetupViewModel(isNew);
         var home = new HomeViewModel();
         MainVM = new MainWindowViewModel(setup, home);
 
         AutoLock.Start(() => Database.LockTimeoutMinutes);
+        AutoBackup.Start();
+        Sync.Start();
     }
 }

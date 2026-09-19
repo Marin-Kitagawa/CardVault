@@ -78,6 +78,10 @@ public partial class SetupViewModel : ViewModelBase
                 Error = "Incorrect password. Try again.";
                 OnPropertyChanged(nameof(HasError));
             }
+            else
+            {
+                AppServices.Sync.OnUnlocked(Password);
+            }
         }
         catch (Exception ex)
         {

@@ -31,6 +31,13 @@ no personal information and is safe to distribute.
 * Per-entry tags for grouping and quick filtering.
 * Nested folders with a built-in icon library for organising the vault into a
   friendly, navigable tree.
+* Drag-and-drop folder re-parenting in the folder manager.
+* Entry templates (passport, national ID, driving licence, SSN, …) for
+  identity and document kinds, plus fully free-form custom fields on every
+  non-card entry.
+* Scheduled *automatic encrypted backups* with a retention policy.
+* Cross-device *file sync*: an encrypted, opt-in snapshot shared through any
+  synced folder (Dropbox, OneDrive, a network drive). No server, no accounts.
 * Password-protected export/import for backups and machine transfers.
 * One-time CSV export for spreadsheets, plus CSV import.
 * KeePass 2 (KDBX 3.x) database import from the settings screen.
@@ -126,10 +133,14 @@ beside each folder shows how many entries live in it (including subfolders).
 === 5.3. Managing folders
 
 *Manage folders* lists the whole tree with edit (rename / re-parent / change
-icon) and delete on every row. Deleting a folder is safe by design: its
-subfolders and entries are *moved one level up* (into the deleted folder's
-parent, or the top level for root folders). Nothing is ever deleted with a
-folder, and entries only ever end up at the same access path or higher.
+icon) and delete on every row. To move a folder, either edit it and pick its
+new *Inside* location, or *drag a row and drop it onto another folder* — drop
+it on the dashed strip at the bottom of the list to move it back out to the top
+level. Vaults never allow a folder to be dropped into its own subtree (which
+would loop), so the tree stays a valid hierarchy. Deleting a folder is safe by
+design: its subfolders and entries are *moved one level up* (into the deleted
+folder's parent, or the top level for root folders). Nothing is ever deleted
+with a folder, and entries only ever end up at the same access path or higher.
 
 === 5.4. The icon library
 
@@ -176,6 +187,17 @@ stored in the encrypted payload.
 
 Cards additionally carry brand information (e.g. `visa`, `amex`, `mastercard`,
 custom) and an accent color used for the card-face gradient and digit display.
+
+=== 6.1. Entry templates
+
+Identity and document entries start from a template picker (passport, national
+ID, driving licence, SSN, health insurance, residence permit, voter ID,
+tax ID). Choosing a template pre-fills the form's labelled fields, and values
+are preserved if you switch templates mid-edit. Every non-card entry also
+supports free-form rows: add labelled fields with the *Add field* button,
+mark anything secret, and rename labels to taste. Field labels and values are
+stored inside the encrypted payload, so a custom label only ever exists in
+plaintext while you are editing it.
 
 == 7. Tags & search
 
@@ -270,25 +292,101 @@ Files that are not recognizable KeePass 2 vaults, use unsupported ciphers or
 inner-stream algorithms, fail their header-hash check, or reject the entered
 password are reported clearly and left untouched.
 
-== 10. Settings
+== 10. Automatic backups
+
+In *Settings → Automatic backups* you can ask the vault to write an encrypted
+backup on a schedule (daily, weekly, monthly) and keep only the newest N files
+(7, 14, 30, or 60). A *Back up now* button forces an immediate run.
+
+Unlike the interactive export (which prompts for a passphrase), automatic
+backups reuse your *master key*, so no passphrase prompt can appear
+unattended. The `.cvault` file records the same KDF salt and iteration count
+as your vault, which means the file can still be restored on any CardVault
+installation with your normal master password. Old files beyond the retention
+window are deleted after each successful backup.
+
+Preference keys (`backup_folder`, `backup_cadence`, `backup_retain`,
+`backup_last`) live in the vault's `meta` table. The timer only runs while the
+vault is unlocked.
+
+== 11. Sync across devices
+
+CardVault sync is an *opt-in, encrypted, peer-to-peer* feature with no server
+and no accounts. Both machines point at the *same shared folder* — a Dropbox
+or OneDrive folder, a network drive (SMB/NAS), or any folder that is synced by
+another tool — and the app exchanges one encrypted snapshot file there.
+
+=== 11.1. Setting it up
+
+1. In *Settings → Sync across devices* turn on *Enable file sync*.
+2. Choose a shared folder that both devices can see (and that syncs between
+   them if it isn't already a network folder).
+3. Press *Sync now*. Once the first device has written a snapshot, the second
+   device adopts the sync key automatically the next time it is unlocked.
+4. Both devices must unlock with the *same master password* — the snapshot is
+   encrypted with a key derived from it.
+
+There is no re-enabling ceremony: after the first sync, the vault exchanges
+changes on its own every few minutes while unlocked, and immediately after
+unlocking. *Sync now* in Settings gives you a manual pull-push.
+
+=== 11.2. What sync does
+
+The snapshot contains every entry (name, kind, brand, tags, folder
+assignment, timestamps, and the encrypted payloads), every folder, and a list
+of *tombstones* (deletions). On each run the app performs a last-writer-wins
+merge per item using each item's modification time: the newer copy — local or
+remote — wins, and the merged result is written back to the shared file. If
+the same item was edited on both devices, the newest edit survives; editing the
+same item on two devices at the same time is the one genuinely conflicting
+case (the newer timestamp wins).
+
+Deletions are carried as tombstones so an offline device does not quietly
+resurrect something that was deleted elsewhere. Tombstones older than a year
+are pruned.
+
+=== 11.3. Security
+
+* The snapshot file (``*{appname}-sync.cvsync``) is sealed with AES-256-GCM
+  under a key derived from your master password plus a *dedicated random sync
+  salt* that the first device generates. The salt is baked into the file's
+  header, so every device derives the same key with the same password — your
+  vault's own KDF parameters never need to match.
+* The sync key lives only in memory, is derived when you unlock, and is zeroed
+  the moment the vault locks. While locked, no syncing happens.
+* If a snapshot cannot be decrypted (for example the other device's master
+  password differs), CardVault refuses to touch the shared file, so a foreign
+  snapshot is never overwritten or destroyed.
+
+Meta keys involved: `sync_folder`, `sync_enabled`, `sync_last`,
+`sync_salt`, `sync_iter`, `sync_device`, and `sync_tombstones`.
+
+== 12. Settings
 
 * *Change master password*: requires the current password; re-encrypts every
   entry under the new derived key.
 * *Auto-lock*: lock the vault after a configurable idle timeout.
+* *Automatic backups*: schedule encrypted backups with retention (see
+  <<Automatic backups>>).
+* *Sync across devices*: enable and manage encrypted file sync (see
+  <<Sync across devices>>).
 * *Themes*: Atelier (default), and Readout with the SEG7 seven-segment
   character display for the card-face digits.
 * *Update check*: optional, checks the public release feed. It is the only
-  network call the app makes.
+  network call the app makes — file sync touches only your shared folder.
 
-== 11. How CardVault works under the hood
+== 13. How CardVault works under the hood
 
-=== 11.1. Storage
+=== 13.1. Storage
 
 The vault is a single SQLite database file located in the per-user
 application-data directory. Three core tables:
 
 * `meta` — key/value store: `kdf_salt`, `kdf_iter`, `master_hash`, `version`,
-  plus application metadata such as theme and lock timeout.
+  plus application metadata such as theme and lock timeout, auto-backup
+  preferences (`backup_folder`, `backup_cadence`, `backup_retain`,
+  `backup_last`), and sync state (`sync_folder`, `sync_enabled`, `sync_last`,
+  `sync_salt`, `sync_iter`, `sync_device`, `sync_tombstones`).
 * `entries` — one row per entry: `id`, `kind`, `name`, `brand`, `accent`,
   `tags`, `folder_id`, `secure` (the encrypted `nonce|tag|ciphertext` blob),
   `created_at`, `updated_at`.
@@ -296,7 +394,7 @@ application-data directory. Three core tables:
   `created_at`, `updated_at`. An empty `parent_id` means top level; an empty
   `folder_id` on an entry means no folder.
 
-=== 11.2. Migration
+=== 13.2. Migration
 
 Opening a database created by an older schema detects and migrates it:
 
@@ -307,32 +405,37 @@ Opening a database created by an older schema detects and migrates it:
 
 There is no plaintext in either table — the `secure` blob stays opaque.
 
-=== 11.3. Key derivation & master verification
+=== 13.3. Key derivation & master verification
 
 `DeriveKey(passphrase, salt, iterations)` = PBKDF2-SHA256. The derived key
 unlocks/encrypts entries; a separate derived value stored in `master_hash`
 verifies the passphrase without storing it. On change, all `secure` blobs are
 re-sealed with the new key.
 
-== 12. Command summary
+== 14. Command summary
 
 |===
 | Action | Entry or UI
 | Add entry | primary + button → picker → form
+| Apply a template | identity/document entry form → template picker
+| Add a custom field | non-card form → Add field / Secret
 | Place in a folder | entry form → Folder picker
 | Browse folders | sidebar tree (or Manage folders)
 | New folder | sidebar + / Manage folders → New folder
+| Move a folder | drag it onto another row, or the dashed top-level strip
 | Delete a folder | Manage folders → Delete (contents move up)
 | Reveal a secret | per-item reveal control
 | Copy a revealed secret | copy button (only while revealed)
 | Filter | search box (name/kind/brand/tags) or folder scope
 | Back up | Export → .cvault (encrypted)
-| Spreadsheet | Export → CSV (plaintext)
+| Schedule backups | Settings → Automatic backups
+| Sync devices | Settings → Sync across devices → choose shared folder
+| Spreadsheet | Export → CSV (plaintext); re-import via Import → CSV
 | Change password | Settings → Security
 | Lock now / auto-lock | lock control / Settings timeout
 |===
 
-== 13. Troubleshooting
+== 15. Troubleshooting
 
 *Forgot the master password?* There is no recovery path by design. Use a
 current backup.
@@ -340,13 +443,28 @@ current backup.
 files error out and are left untouched.
 *CSV looks mangled in Excel?* The export writes UTF-8 with BOM; if your
 environment shows mojibake, re-import via the app's CSV importer instead.
+*Sync shows "Could not decrypt the sync snapshot"?* The shared folder contains
+a snapshot written with a different master password. Unlock both devices with
+the same password, or — if you truly want to start over — remove
+`cardvault-sync.cvsync` from the shared folder on all devices first.
+*Sync sometimes needs two cycles?* Folder deletions can leave an entry's
+folder assignment one merge behind while the surviving copy is re-parented.
+This is cosmetic and self-corrects on the next sync.
 
-== 14. Roadmap
+== 16. Roadmap
 
-* Native auto-backup scheduling.
-* Browser-style entry templates for more identity documents.
-* Drag-and-drop re-parenting in the folder manager.
-* Cross-device sync (encrypted, opt-in) in a later release.
+Shipped:
+* CSV import (paired with the existing CSV export).
+* Scheduled encrypted auto-backups with retention.
+* Browser-style entry templates for identity/document kinds + free-form fields.
+* Drag-and-drop folder re-parenting.
+* Cross-device file sync (encrypted, opt-in, no server).
+
+Planned:
+* A bundled seven-segment display font for crisper card-face digits.
+* More entry templates and import sources.
+* Hardware-key or biometric unlock as an alternative to typing the master
+  password.
 
 == Appendix A: Format notes
 

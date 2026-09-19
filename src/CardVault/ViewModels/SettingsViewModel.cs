@@ -16,12 +16,19 @@ public sealed record LockOption(int Minutes, string Label);
 
 public sealed record ThemeOption(ThemeKind Kind, string Label, string Blurb);
 
+public sealed record BackupCadenceOption(string Value, string Label);
+
+public sealed record BackupRetainOption(int Count, string Label);
+
 public partial class SettingsViewModel : ViewModelBase
 {
     private readonly VaultDatabase _db;
     private readonly ExportService _export;
     private readonly KeepassImportService _keepass;
+    private readonly AutoBackupService _backup;
+    private readonly SyncService _sync;
     private readonly Action _onChanged;
+    private bool _loaded;
 
     public event Action? RequestClose;
 
@@ -40,6 +47,22 @@ public partial class SettingsViewModel : ViewModelBase
         new(ThemeKind.Readout, "Readout", "Bedside clock \u2014 amber signal, seven-segment digits."),
     };
 
+    public IReadOnlyList<BackupCadenceOption> BackupCadences { get; } = new List<BackupCadenceOption>
+    {
+        new(string.Empty, "Off"),
+        new(AutoBackupService.Daily, "Daily"),
+        new(AutoBackupService.Weekly, "Weekly"),
+        new(AutoBackupService.Monthly, "Monthly"),
+    };
+
+    public IReadOnlyList<BackupRetainOption> BackupRetains { get; } = new List<BackupRetainOption>
+    {
+        new(7, "Keep 7"),
+        new(14, "Keep 14"),
+        new(30, "Keep 30"),
+        new(60, "Keep 60"),
+    };
+
     [ObservableProperty] private LockOption selectedLock;
     [ObservableProperty] private ThemeOption selectedTheme;
     [ObservableProperty] private string oldPassword = string.Empty;
@@ -50,22 +73,49 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool updateAvailable;
     [ObservableProperty] private string updateStatus = $"Running v{UpdateService.CurrentVersion}. Check GitHub releases for updates.";
     [ObservableProperty] private string updateUrl = UpdateService.ReleasesUrl;
+    [ObservableProperty] private BackupCadenceOption selectedBackupCadence;
+    [ObservableProperty] private BackupRetainOption selectedBackupRetain;
+    [ObservableProperty] private string backupFolder = string.Empty;
+    [ObservableProperty] private bool backupBusy;
+    [ObservableProperty] private string backupStatus = string.Empty;
+    [ObservableProperty] private bool syncEnabled;
+    [ObservableProperty] private string syncFolder = string.Empty;
+    [ObservableProperty] private bool syncBusy;
+    [ObservableProperty] private string syncStatus = string.Empty;
 
-    public SettingsViewModel(VaultDatabase db, ExportService export, Action onChanged)
+    public SettingsViewModel(VaultDatabase db, ExportService export, AutoBackupService backup, SyncService sync, Action onChanged)
     {
         _db = db;
         _export = export;
+        _backup = backup;
+        _sync = sync;
         _keepass = new KeepassImportService(db);
         _onChanged = onChanged;
         SelectedLock = LockOptions.FirstOrDefault(x => x.Minutes == db.LockTimeoutMinutes) ?? LockOptions[1];
         SelectedTheme = ThemeOptions.FirstOrDefault(x => x.Kind == ThemeService.Current) ?? ThemeOptions[0];
+
+        var prefs = _backup.ReadPrefs();
+        SelectedBackupCadence = BackupCadences.FirstOrDefault(x => x.Value == prefs.Cadence) ?? BackupCadences[0];
+        SelectedBackupRetain = BackupRetains.FirstOrDefault(x => x.Count == prefs.Retain) ?? BackupRetains[1];
+        BackupFolder = prefs.Folder;
+
+        var syncPrefs = _sync.ReadPrefs();
+        SyncEnabled = syncPrefs.Enabled;
+        SyncFolder = syncPrefs.Folder;
+        _loaded = true;
+        RefreshBackupStatus();
+        RefreshSyncStatus();
     }
 
     public bool IsIdle => !IsBusy;
     public bool IsUpdateIdle => !UpdateBusy;
+    public bool IsBackupIdle => !BackupBusy;
+    public bool IsSyncIdle => !SyncBusy;
 
     partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(IsIdle));
     partial void OnUpdateBusyChanged(bool value) => OnPropertyChanged(nameof(IsUpdateIdle));
+    partial void OnBackupBusyChanged(bool value) => OnPropertyChanged(nameof(IsBackupIdle));
+    partial void OnSyncBusyChanged(bool value) => OnPropertyChanged(nameof(IsSyncIdle));
 
     partial void OnSelectedLockChanged(LockOption value) => _db.LockTimeoutMinutes = value.Minutes;
 
@@ -73,6 +123,207 @@ public partial class SettingsViewModel : ViewModelBase
     {
         if (value.Kind != ThemeService.Current)
             ThemeService.Apply(value.Kind, _db);
+    }
+
+    partial void OnSelectedBackupCadenceChanged(BackupCadenceOption value)
+    {
+        if (!_loaded || value is null) return;
+        PersistBackupPrefs();
+        RefreshBackupStatus();
+    }
+
+    partial void OnSelectedBackupRetainChanged(BackupRetainOption value)
+    {
+        if (!_loaded || value is null) return;
+        PersistBackupPrefs();
+    }
+
+    private void PersistBackupPrefs() => _backup.SavePrefs(new BackupPrefs(
+        BackupFolder.Trim(),
+        SelectedBackupCadence?.Value ?? string.Empty,
+        SelectedBackupRetain?.Count ?? AutoBackupService.DefaultRetain,
+        null));
+
+    private void RefreshBackupStatus()
+    {
+        var prefs = _backup.ReadPrefs();
+        var when = prefs.LastBackup is null
+            ? "No automatic backup has run yet."
+            : $"Last backup: {prefs.LastBackup.Value.LocalDateTime:g}.";
+        BackupStatus = prefs.Folder.Length == 0
+            ? when + " Choose a folder to enable automatic backups."
+            : when + (prefs.Cadence.Length == 0
+                ? " Schedule is off — backups will not run until you pick a cadence."
+                : $" Runs {AutoBackupService.DisplayName(prefs.Cadence).ToLowerInvariant()}, keeping the newest {prefs.Retain}.");
+        if (_backup.LastError.Length > 0)
+            BackupStatus += "\nLast attempt failed: " + _backup.LastError;
+    }
+
+    [RelayCommand]
+    private async Task PickBackupFolderAsync()
+    {
+        var owner = AppServices.MainWindow;
+        var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Choose automatic backup folder",
+            AllowMultiple = false,
+        });
+        if (folders.Count == 0) return;
+
+        var path = folders[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(path))
+        {
+            await DialogService.ShowAsync(owner, "Folder unavailable", "That location could not be used.");
+            return;
+        }
+
+        BackupFolder = path;
+        PersistBackupPrefs();
+        RefreshBackupStatus();
+    }
+
+    [RelayCommand]
+    private async Task BackupNowAsync()
+    {
+        var owner = AppServices.MainWindow;
+        PersistBackupPrefs();
+        var prefs = _backup.ReadPrefs();
+        if (prefs.Folder.Length == 0)
+        {
+            await DialogService.ShowAsync(owner, "No backup folder", "Choose a folder first — the backup file has to live somewhere.");
+            return;
+        }
+
+        BackupBusy = true;
+        try
+        {
+            var path = await _backup.RunBackupAsync(prefs);
+            if (path is null)
+            {
+                if (_backup.LastError.Length > 0)
+                    await DialogService.ShowAsync(owner, "Backup failed", _backup.LastError);
+                else
+                    await DialogService.ShowAsync(owner, "Backup skipped", "The vault is locked. Unlock it and try again.");
+            }
+            else
+            {
+                await DialogService.ShowAsync(owner, "Backup complete",
+                    $"Encrypted backup written to:\n{path}\n\nIt can be restored with your master password on any CardVault installation.");
+            }
+        }
+        finally
+        {
+            BackupBusy = false;
+            RefreshBackupStatus();
+        }
+    }
+
+    // ============================= sync =============================
+
+    private void PersistSyncPrefs()
+    {
+        var folder = SyncFolder.Trim();
+        _sync.SavePrefs(new SyncPrefs(folder, SyncEnabled, null));
+    }
+
+    partial void OnSyncEnabledChanged(bool value)
+    {
+        if (!_loaded) return;
+        PersistSyncPrefs();
+        if (value && SyncFolder.Length == 0)
+            SyncStatus = "Sync is on, but no folder is chosen yet.";
+        else
+            RefreshSyncStatus();
+    }
+
+    private void RefreshSyncStatus()
+    {
+        var prefs = _sync.ReadPrefs();
+        var when = prefs.LastSync is null
+            ? "No sync has run yet."
+            : $"Last sync: {prefs.LastSync.Value.LocalDateTime:g}.";
+        if (prefs.Folder.Length == 0)
+        {
+            SyncStatus = when + " Sync is off — choose a folder to enable it.";
+        }
+        else if (!prefs.Enabled)
+        {
+            SyncStatus = when + $" Folder: {prefs.Folder} — sync is disabled.";
+        }
+        else
+        {
+            SyncStatus = when + " Changes are exchanged every few minutes while the vault is unlocked.\n" +
+                "The sync file is encrypted with your master password — both devices must know it.";
+        }
+        if (_sync.LastError.Length > 0)
+            SyncStatus += "\nLast attempt failed: " + _sync.LastError;
+    }
+
+    [RelayCommand]
+    private async Task PickSyncFolderAsync()
+    {
+        var owner = AppServices.MainWindow;
+        var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Choose shared sync folder (Dropbox, OneDrive, network drive…)",
+            AllowMultiple = false,
+        });
+        if (folders.Count == 0) return;
+
+        var path = folders[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(path))
+        {
+            await DialogService.ShowAsync(owner, "Folder unavailable", "That location could not be used.");
+            return;
+        }
+
+        if (_sync.AdoptRemoteSalt(path))
+            SyncStatus = "Picked the shared folder. If needed, unlock again so this device adopts the sync key from the snapshot.";
+        SyncFolder = path;
+        PersistSyncPrefs();
+        RefreshSyncStatus();
+    }
+
+    [RelayCommand]
+    private async Task SyncNowAsync()
+    {
+        var owner = AppServices.MainWindow;
+        PersistSyncPrefs();
+        if (SyncFolder.Length == 0)
+        {
+            await DialogService.ShowAsync(owner, "No sync folder", "Choose a shared folder first — the sync snapshot has to live somewhere.");
+            return;
+        }
+
+        SyncBusy = true;
+        try
+        {
+            var touched = await _sync.RunSyncAsync();
+            if (touched)
+            {
+                _onChanged?.Invoke();
+                await DialogService.ShowAsync(owner, "Sync complete",
+                    "The vault is now in step with the shared folder.");
+            }
+            else if (_sync.LastError.Length > 0)
+            {
+                await DialogService.ShowAsync(owner, "Sync failed", _sync.LastError);
+            }
+            else
+            {
+                await DialogService.ShowAsync(owner, "Sync complete",
+                    "Nothing to change — the vault was already in step.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowAsync(owner, "Sync failed", ex.Message);
+        }
+        finally
+        {
+            SyncBusy = false;
+            RefreshSyncStatus();
+        }
     }
 
     [RelayCommand]
@@ -317,6 +568,66 @@ public partial class SettingsViewModel : ViewModelBase
         catch (Exception ex)
         {
             await DialogService.ShowAsync(owner, "Export failed", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportCsvAsync()
+    {
+        var owner = AppServices.MainWindow;
+        var proceed = await DialogService.ConfirmAsync(owner, "Plain-text import",
+            "This CSV file is PLAINTEXT — it is NOT encrypted. Only import CSV files you created yourself (e.g. via Settings ▸ Export plain CSV) or from a source you fully trust.\n\nItems will be added to your vault as soon as you confirm. Import anyway?",
+            "Import CSV", "Cancel", danger: true);
+        if (!proceed) return;
+
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import CSV",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("CSV spreadsheet") { Patterns = new[] { $"*.{CsvExporter.FileExtension}" } },
+                new FilePickerFileType("All files") { Patterns = new[] { "*" } },
+            },
+        });
+        if (files.Count == 0) return;
+
+        var path = files[0].TryGetLocalPath();
+        if (string.IsNullOrEmpty(path))
+        {
+            await DialogService.ShowAsync(owner, "Import cancelled", "The file location could not be used.");
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var count = await Task.Run(() =>
+            {
+                var bytes = File.ReadAllBytes(path);
+                var items = CsvImporter.Parse(bytes);
+                foreach (var item in items)
+                {
+                    var entry = item.Entry;
+                    if (item.Payload is CardSecureData card)
+                        _db.SaveImported(entry, entry.Name, entry.Kind, entry.Brand, entry.Accent, card, null);
+                    else if (item.Payload is EntrySecureData generic)
+                        _db.SaveImported(entry, entry.Name, entry.Kind, entry.Brand, entry.Accent, null, generic);
+                }
+                return items.Count;
+            });
+
+            _onChanged?.Invoke();
+            await DialogService.ShowAsync(owner, "Import complete",
+                count == 1 ? "Imported 1 item." : $"Imported {count} items.");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.ShowAsync(owner, "Import failed", ex.Message);
         }
         finally
         {

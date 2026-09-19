@@ -70,6 +70,89 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Automatic backups -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="AUTOMATIC BACKUPS" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Schedule" FontSize="14" />
+                                <TextBlock Classes="faint" TextWrapping="Wrap"
+                                           Text="Auto-backups reuse your master key, so they are encrypted end-to-end and can be restored with your master password anywhere." />
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="150" Margin="12,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{Binding BackupCadences}"
+                                      SelectedItem="{Binding SelectedBackupCadence}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:BackupCadenceOption">
+                                        <TextBlock Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Keep at most" FontSize="14" />
+                                <TextBlock Classes="faint" TextWrapping="Wrap"
+                                           Text="Older automatic backups are deleted once this many exist." />
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="150" Margin="12,0,0,0" VerticalAlignment="Center"
+                                      ItemsSource="{Binding BackupRetains}"
+                                      SelectedItem="{Binding SelectedBackupRetain}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRetainOption">
+                                        <TextBlock Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Folder" FontSize="14" />
+                                <TextBlock Grid.Column="0" Classes="faint" TextWrapping="Wrap"
+                                           Text="{Binding BackupFolder}" MaxLines="3" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Classes="ghost" Content="Choose…" Margin="12,0,0,0"
+                                    VerticalAlignment="Center" Command="{Binding PickBackupFolderCommand}" />
+                        </Grid>
+                        <Button Classes="tprimary" Content="Back up now" HorizontalAlignment="Left"
+                                Command="{Binding BackupNowCommand}" IsEnabled="{Binding IsBackupIdle}" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" Text="{Binding BackupStatus}" LineHeight="18" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Sync -->
+                <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
+                        BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="SYNC ACROSS DEVICES" FontSize="11" FontWeight="Bold" LetterSpacing="1.6"
+                                   Foreground="{DynamicResource BrushTextFaint}" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Enable file sync" FontSize="14" />
+                                <TextBlock Classes="faint" TextWrapping="Wrap"
+                                           Text="Encrypted snapshot exchanged through any synced folder (Dropbox, OneDrive, network drive). No server, no accounts — both devices need the same master password." />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0"
+                                      IsChecked="{Binding SyncEnabled}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Shared folder" FontSize="14" />
+                                <TextBlock Grid.Column="0" Classes="faint" TextWrapping="Wrap"
+                                           Text="{Binding SyncFolder}" MaxLines="3" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Classes="ghost" Content="Choose…" Margin="12,0,0,0"
+                                    VerticalAlignment="Center" Command="{Binding PickSyncFolderCommand}" />
+                        </Grid>
+                        <Button Classes="tprimary" Content="Sync now" HorizontalAlignment="Left"
+                                Command="{Binding SyncNowCommand}" IsEnabled="{Binding IsSyncIdle}" />
+                        <TextBlock Classes="faint" TextWrapping="Wrap" Text="{Binding SyncStatus}" LineHeight="18" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Backups -->
                 <Border Background="{DynamicResource BrushSurface}" CornerRadius="14" Padding="18"
                         BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1">
@@ -84,6 +167,8 @@
                                 Command="{Binding ImportKeepassCommand}" />
                         <Button Classes="ghost" Content="Export plain CSV…" HorizontalAlignment="Left"
                                 Command="{Binding ExportCsvCommand}" />
+                        <Button Classes="ghost" Content="Import CSV…" HorizontalAlignment="Left"
+                                Command="{Binding ImportCsvCommand}" />
                         <TextBlock Classes="faint" TextWrapping="Wrap"
                                    Text="Backups are encrypted with AES-256-GCM and protected by a passphrase of your choice. They can be restored on this or any other CardVault installation. KeePass imports read password-protected KDBX 3.x files (groups and entries) and store them inside your vault. CSV is the one deliberately plain-text output — you will be warned before it is written." />
                     </StackPanel>

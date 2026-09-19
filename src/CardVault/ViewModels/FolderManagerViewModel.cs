@@ -74,6 +74,26 @@ public partial class FolderManagerViewModel : ViewModelBase
         Refresh();
     }
 
+    /// <summary>Re-parents a folder (drag-and-drop). No-ops when it would create a cycle.</summary>
+    public void AssignParent(string folderId, string parentId)
+    {
+        var folders = AppServices.Database.ListFolders();
+        if (!CanAssign(folders, folderId, parentId)) return;
+        AppServices.Database.MoveFolder(folderId, parentId);
+        Refresh();
+    }
+
+    /// <summary>
+    /// Pure guard for re-parenting: a folder cannot become its own child nor a
+    /// child of one of its own descendants (that would form a cycle).
+    /// </summary>
+    public static bool CanAssign(IReadOnlyList<Folder> folders, string childId, string parentId)
+    {
+        if (parentId.Length == 0) return true;
+        if (string.Equals(childId, parentId, StringComparison.Ordinal)) return false;
+        return !FolderHelpers.Descendants(folders, childId).Contains(parentId);
+    }
+
     private void Edit(FolderManagerRowViewModel row)
     {
         var vm = new FolderEditorViewModel(row.Folder);

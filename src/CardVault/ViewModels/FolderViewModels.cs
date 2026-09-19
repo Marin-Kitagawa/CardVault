@@ -173,7 +173,7 @@ public static class FolderOptionBuilder
 /// <summary>Tiny folder-graph helpers (descendant lookups).</summary>
 public static class FolderHelpers
 {
-    public static HashSet<string> Descendants(List<Folder> folders, string rootId)
+    public static HashSet<string> Descendants(IReadOnlyList<Folder> folders, string rootId)
     {
         var children = new Dictionary<string, List<string>>();
         foreach (var folder in folders)

@@ -1,6 +1,7 @@
 using CardVault.Data;
 using CardVault.Models;
 using CardVault.Security;
+using CardVault.ViewModels;
 
 namespace CardVault.Tests;
 
@@ -135,6 +136,68 @@ public class FolderTests
 
             Assert.Null(db.GetFolder(folder.Id));
             Assert.Equal(string.Empty, db.GetEntry(entry.Id)!.FolderId);
+        }
+        finally { session.Lock(); db.Dispose(); }
+    }
+
+    [Fact]
+    public void MoveFolder_Reparents()
+    {
+        var (db, session) = CreateVault("move");
+        try
+        {
+            var a = db.CreateFolder("A", "folder");
+            var b = db.CreateFolder("B", "folder");
+            db.MoveFolder(b.Id, a.Id);
+
+            var loaded = db.GetFolder(b.Id)!;
+            Assert.Equal(a.Id, loaded.ParentId);
+        }
+        finally { session.Lock(); db.Dispose(); }
+    }
+
+    [Fact]
+    public void CanAssign_AllowsValidParent()
+    {
+        var (db, session) = CreateVault("guard");
+        try
+        {
+            var root = db.CreateFolder("Root", "folder");
+            var child = db.CreateFolder("Child", "folder");
+            var sibling = db.CreateFolder("Sibling", "folder");
+
+            var folders = new List<Folder> { root, child, sibling };
+            Assert.True(FolderManagerViewModel.CanAssign(folders, child.Id, root.Id));
+            Assert.True(FolderManagerViewModel.CanAssign(folders, child.Id, sibling.Id));
+            Assert.True(FolderManagerViewModel.CanAssign(folders, root.Id, string.Empty));
+        }
+        finally { session.Lock(); db.Dispose(); }
+    }
+
+    [Fact]
+    public void CanAssign_RejectsCyclesButAllowsValidMoves()
+    {
+        var (db, session) = CreateVault("cycle");
+        try
+        {
+            var root = db.CreateFolder("Root", "folder");
+            var child = db.CreateFolder("Child", "folder", root.Id);
+            var grandchild = db.CreateFolder("Grandchild", "folder", child.Id);
+            var sibling = db.CreateFolder("Sibling", "folder");
+
+            var folders = new List<Folder> { root, child, grandchild, sibling };
+
+            // Self-parenting is never allowed.
+            Assert.False(FolderManagerViewModel.CanAssign(folders, child.Id, child.Id));
+            // A folder cannot move into its own subtree (would form a cycle).
+            Assert.False(FolderManagerViewModel.CanAssign(folders, root.Id, child.Id));
+            Assert.False(FolderManagerViewModel.CanAssign(folders, root.Id, grandchild.Id));
+            Assert.False(FolderManagerViewModel.CanAssign(folders, child.Id, grandchild.Id));
+            // Valid moves are allowed.
+            Assert.True(FolderManagerViewModel.CanAssign(folders, child.Id, sibling.Id));
+            Assert.True(FolderManagerViewModel.CanAssign(folders, sibling.Id, child.Id));
+            Assert.True(FolderManagerViewModel.CanAssign(folders, grandchild.Id, child.Id));
+            Assert.True(FolderManagerViewModel.CanAssign(folders, root.Id, string.Empty));
         }
         finally { session.Lock(); db.Dispose(); }
     }

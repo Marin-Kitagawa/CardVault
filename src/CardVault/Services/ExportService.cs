@@ -85,6 +85,64 @@ public sealed class ExportService
         return JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
     }
 
+    /// <summary>
+    /// Export encrypted with an already-derived key (used by unattended auto-backup
+    /// and sync, where no passphrase prompt is possible). The envelope records the
+    /// KDF salt and iteration count that produced <paramref name="key"/>, so a
+    /// normal passphrase import reproduces the same key and can decrypt the file.
+    /// </summary>
+    public byte[] ExportWithKey(
+        IReadOnlyList<VaultEntry> entries,
+        IReadOnlyList<object?> payloads,
+        byte[] key,
+        byte[] salt,
+        int iterations)
+    {
+        var payload = new ExportPayload { ExportedAt = DateTimeOffset.UtcNow.ToString("O") };
+        for (var i = 0; i < entries.Count; i++)
+        {
+            var e = entries[i];
+            var p = payloads[i];
+            var card = p as CardSecureData;
+            var generic = p as EntrySecureData;
+
+            payload.Items.Add(new ExportEntry
+            {
+                Id = e.Id,
+                Kind = e.Kind.ToString().ToLowerInvariant(),
+                Name = e.Name,
+                Brand = e.Brand,
+                Accent = e.Accent,
+                Tags = e.Tags,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt,
+                Holder = card?.Holder ?? string.Empty,
+                Number = card?.Number ?? string.Empty,
+                ExpiryMonth = card?.ExpiryMonth ?? string.Empty,
+                ExpiryYear = card?.ExpiryYear ?? string.Empty,
+                Cvv = card?.Cvv ?? string.Empty,
+                Notes = card?.Notes ?? generic?.Notes ?? string.Empty,
+                Secrets = (card?.Secrets ?? generic?.Secrets)?.Select(s => new ExportSecret { Name = s.Name, Value = s.Value }).ToList() ?? new(),
+                Fields = generic?.Fields?.Select(f => new ExportField { Label = f.Label, Value = f.Value }).ToList() ?? new(),
+            });
+        }
+
+        var plain = JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions);
+        var blob = CryptoService.Encrypt(key, plain, Magic);
+        CryptographicOperations.ZeroMemory(plain);
+
+        var envelope = new ExportEnvelope
+        {
+            Magic = Magic,
+            Version = FormatVersion,
+            KdfSalt = Convert.ToBase64String(salt),
+            KdfIterations = iterations,
+            Blob = Convert.ToBase64String(blob),
+        };
+
+        return JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
+    }
+
     public List<ImportedEntry> Import(byte[] file, string passphrase)
     {
         var envelope = JsonSerializer.Deserialize<ExportEnvelope>(file, JsonOptions)

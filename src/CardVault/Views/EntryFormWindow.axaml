@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:CardVault.ViewModels"
         xmlns:views="clr-namespace:CardVault.Views"
+        xmlns:m="clr-namespace:CardVault.Models"
         mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="820"
         x:DataType="vm:EntryFormViewModel"
         x:Class="CardVault.Views.EntryFormWindow"
@@ -105,24 +106,50 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- kind template fields -->
-                <StackPanel Spacing="16" IsVisible="{Binding HasTemplateFields}">
+                <!-- kind fields -->
+                <StackPanel Spacing="16" IsVisible="{Binding IsCard, Converter={StaticResource InverseBool}}">
+
+                    <StackPanel Spacing="8" IsVisible="{Binding HasTemplatePicker}">
+                        <TextBlock Text="Template" Classes="eyebrow" />
+                        <ComboBox PlaceholderText="Pick a template\u2026"
+                                  ItemsSource="{Binding EntryTemplatesForKind}"
+                                  SelectedItem="{Binding SelectedTemplate}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="m:EntryTemplate">
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Classes="faint" TextWrapping="Wrap"
+                                   Text="Applies a starter set of fields you can edit, rename or remove. Nothing is saved until you choose Add." />
+                    </StackPanel>
+
                     <ItemsControl ItemsSource="{Binding TemplateFields}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Spacing="16" />
+                                <StackPanel Spacing="10" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:EntryFieldRowViewModel">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="{Binding Label}" Classes="eyebrow" />
-                                    <TextBox Classes="tcard" Watermark="{Binding Label}"
+                                <Grid ColumnDefinitions="130,Auto,8,*,Auto">
+                                    <TextBox Grid.Column="0" Classes="tcard" Watermark="Label"
+                                             MaxLength="40" Text="{Binding Label, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1" Text="SECRET" FontSize="8" FontWeight="Bold"
+                                               LetterSpacing="1.2" Foreground="{DynamicResource BrushTextFaint}"
+                                               VerticalAlignment="Center" Margin="8,0,0,0"
+                                               IsVisible="{Binding IsSecret}" />
+                                    <TextBox Grid.Column="3" Classes="tcard" Watermark="{Binding Label}"
                                              MaxLength="200" Text="{Binding Value, Mode=TwoWay}" />
-                                </StackPanel>
+                                    <Button Grid.Column="4" Classes="tlink" Content="Remove"
+                                            Command="{Binding RemoveCommand}" VerticalAlignment="Center"
+                                            Margin="10,0,0,0" />
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <Button Classes="ghost" Content="Add field" Command="{Binding AddFieldCommand}"
+                            HorizontalAlignment="Left" />
                 </StackPanel>
 
                 <StackPanel Spacing="8">

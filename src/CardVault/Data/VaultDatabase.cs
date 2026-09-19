@@ -366,11 +366,52 @@ public sealed class VaultDatabase : IDisposable
 
     public void MoveEntryToFolder(string entryId, string folderId) => Execute(c =>
     {
-        c.CommandText = "UPDATE entries SET folder_id=$folder WHERE id=$id";
+        c.CommandText = "UPDATE entries SET folder_id=$folder, updated_at=$updated WHERE id=$id";
         c.Parameters.AddWithValue("$folder", folderId);
+        c.Parameters.AddWithValue("$updated", DateTimeOffset.UtcNow.ToString("O"));
         c.Parameters.AddWithValue("$id", entryId);
         c.ExecuteNonQuery();
     });
+
+    public void MoveFolder(string folderId, string parentId) => Execute(c =>
+    {
+        c.CommandText = "UPDATE folders SET parent_id=$parent, updated_at=$updated WHERE id=$id";
+        c.Parameters.AddWithValue("$parent", parentId);
+        c.Parameters.AddWithValue("$updated", DateTimeOffset.UtcNow.ToString("O"));
+        c.Parameters.AddWithValue("$id", folderId);
+        c.ExecuteNonQuery();
+    });
+
+    /// <summary>Inserts or fully replaces an entry, preserving remote timestamps (used by sync).</summary>
+    public void UpsertEntry(VaultEntry entry) => Execute(c =>
+    {
+        c.CommandText = """
+            INSERT INTO entries(id, kind, name, brand, accent, secure, tags, folder_id, created_at, updated_at)
+            VALUES ($id, $kind, $name, $brand, $accent, $secure, $tags, $folder, $created, $updated)
+            ON CONFLICT(id) DO UPDATE SET
+                kind=$kind, name=$name, brand=$brand, accent=$accent, secure=$secure,
+                tags=$tags, folder_id=$folder, created_at=$created, updated_at=$updated
+            """;
+        BindEntry(c, entry);
+        c.ExecuteNonQuery();
+    });
+
+    /// <summary>Inserts or fully replaces a folder, preserving remote timestamps (used by sync).</summary>
+    public void UpsertFolder(Folder folder) => Execute(c =>
+    {
+        c.CommandText = """
+            INSERT INTO folders(id, parent_id, name, icon, created_at, updated_at)
+            VALUES ($id, $parent, $name, $icon, $created, $updated)
+            ON CONFLICT(id) DO UPDATE SET
+                parent_id=$parent, name=$name, icon=$icon, created_at=$created, updated_at=$updated
+            """;
+        BindFolder(c, folder);
+        c.ExecuteNonQuery();
+    });
+
+    /// <summary>Seals a payload under the current session key in-memory (does not persist). Used by sync.</summary>
+    public void AssignSecureData(VaultEntry entry, object payload)
+        => entry.SecureBlob = EncryptPayload(entry, payload);
 
     public List<Folder> ListFolders()
     {
@@ -457,7 +498,7 @@ public sealed class VaultDatabase : IDisposable
         }
     }
 
-    private void SetMeta(string key, string value)
+    public void SetMeta(string key, string value)
     {
         Execute(c =>
         {
@@ -470,6 +511,29 @@ public sealed class VaultDatabase : IDisposable
             c.ExecuteNonQuery();
         });
     }
+
+    public void DeleteMeta(string key)
+    {
+        Execute(c =>
+        {
+            c.CommandText = "DELETE FROM meta WHERE key=$k";
+            c.Parameters.AddWithValue("$k", key);
+            c.ExecuteNonQuery();
+        });
+    }
+
+    /// <summary>The per-vault PBKDF2 salt embedded in the encrypted backup, or null when unset.</summary>
+    public byte[]? KdfSalt
+    {
+        get
+        {
+            var encoded = GetMeta("kdf_salt");
+            return encoded is null ? null : Convert.FromBase64String(encoded);
+        }
+    }
+
+    /// <summary>The per-vault PBKDF2 iteration count.</summary>
+    public int KdfIterations => int.TryParse(GetMeta("kdf_iter"), out var v) ? v : CryptoService.KdfIterations;
 
     private void UpdateBlob(VaultEntry entry) => Execute(c =>
     {

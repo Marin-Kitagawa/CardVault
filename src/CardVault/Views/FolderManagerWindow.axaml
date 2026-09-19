@@ -21,13 +21,23 @@
                     VerticalAlignment="Center" />
         </Grid>
 
-        <Grid Grid.Row="1" Margin="26,16,26,18" RowDefinitions="Auto,*">
+        <Grid Grid.Row="1" Margin="26,16,26,18" RowDefinitions="Auto,Auto,*">
             <Grid ColumnDefinitions="*,Auto">
                 <Button Classes="ghost" Content="New folder" Command="{Binding NewFolderCommand}"
                         HorizontalAlignment="Left" />
             </Grid>
 
-            <ScrollViewer Grid.Row="1" Margin="0,12,0,0">
+            <Border Grid.Row="1" Margin="0,12,0,0" CornerRadius="12" Padding="14,9"
+                    Background="{DynamicResource BrushSurfaceHigh}"
+                    BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
+                    DragDrop.AllowDrop="True"
+                    DragDrop.DragOver="OnRootDragOver"
+                    DragDrop.Drop="OnRootDrop">
+                <TextBlock Classes="faint" TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
+                           Text="Drop a folder here to move it out of all folders, or drop it onto a row to nest it inside." />
+            </Border>
+
+            <ScrollViewer Grid.Row="2" Margin="0,12,0,0">
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -38,7 +48,12 @@
                         <DataTemplate x:DataType="vm:FolderManagerRowViewModel">
                             <Border Background="{DynamicResource BrushSurface}" CornerRadius="12"
                                     BorderBrush="{DynamicResource BrushStroke}" BorderThickness="1"
-                                    Padding="12,10" Margin="{Binding Indent}" Classes.selected="">
+                                    Padding="12,10" Margin="{Binding Indent}" Classes.selected=""
+                                    PointerPressed="OnRowPointerPressed"
+                                    PointerMoved="OnRowPointerMoved"
+                                    DragDrop.AllowDrop="True"
+                                    DragDrop.DragOver="OnRowDragOver"
+                                    DragDrop.Drop="OnRowDrop">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
                                     <Border Width="36" Height="36" CornerRadius="10"
                                             Background="{DynamicResource BrushSurfaceHigh}"
@@ -68,6 +83,6 @@
         </Grid>
 
         <TextBlock Grid.Row="2" Classes="faint" Margin="26,0,26,22" TextWrapping="Wrap"
-                   Text="Deleting a folder moves its subfolders and entries one level up. Nothing is ever deleted with it." />
+                   Text="Deleting a folder moves its subfolders and entries one level up. Nothing is ever deleted with it. Drag a row onto another row to nest it, or onto the dashed strip to move it to the top level." />
     </Grid>
 </Window>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -43,6 +44,7 @@ public partial class EntryFormViewModel : ViewModelBase
     [ObservableProperty] private bool cvvOkay;
     [ObservableProperty] private string holderHint = "The name embossed on the card";
     [ObservableProperty] private bool holderOkay;
+    [ObservableProperty] private EntryTemplate? selectedTemplate;
 
     public const int MaxSecretEntries = 12;
     public const int MaxFieldLength = 200;
@@ -56,6 +58,9 @@ public partial class EntryFormViewModel : ViewModelBase
     public bool IsCard => EntryKinds.IsCard(Kind);
     public string KindName => EntryKinds.DisplayName(Kind);
     public bool HasTemplateFields => TemplateFields.Count > 0;
+
+    public IReadOnlyList<EntryTemplate> EntryTemplatesForKind => EntryTemplates.ForKind(Kind);
+    public bool HasTemplatePicker => EntryTemplatesForKind.Count > 0;
 
     public string WindowTitle => _existing is null
         ? (IsCard ? "Add card" : $"Add {KindName}")
@@ -114,7 +119,18 @@ public partial class EntryFormViewModel : ViewModelBase
                      ? Array.Empty<EntryFieldDef>()
                      : EntryKinds.For(kind).Fields)
             TemplateFields.Add(new EntryFieldRowViewModel(def.Label,
-                generic?.Fields.FirstOrDefault(f => f.Label == def.Label)?.Value ?? string.Empty));
+                generic?.Fields.FirstOrDefault(f => f.Label == def.Label)?.Value ?? string.Empty,
+                isSecret: def.Masked));
+
+        if (!IsCard && generic is not null)
+        {
+            var known = EntryKinds.For(kind).Fields.Select(f => f.Label).ToHashSet();
+            foreach (var custom in generic.Fields.Where(f =>
+                         !string.IsNullOrWhiteSpace(f.Label) &&
+                         !string.IsNullOrWhiteSpace(f.Value) &&
+                         !known.Contains(f.Label)))
+                TemplateFields.Add(new EntryFieldRowViewModel(custom.Label, custom.Value));
+        }
 
         var secrets = IsCard
             ? card?.Secrets ?? new System.Collections.Generic.List<SecretEntry>()
@@ -338,6 +354,45 @@ public partial class EntryFormViewModel : ViewModelBase
             Swatches.Add(new SwatchViewModel(i + 1, string.Empty, CardBrandInfo.CustomPalettes[i].start, SelectSwatch));
     }
 
+    // ---------- field rows / templates ----------
+
+    partial void OnSelectedTemplateChanged(EntryTemplate? value)
+    {
+        if (_updating || value is null) return;
+        ApplyTemplate(value);
+        _updating = true;
+        SelectedTemplate = null;
+        _updating = false;
+    }
+
+    private void ApplyTemplate(EntryTemplate template)
+    {
+        var existing = _genericData?.Fields
+            .Where(f => !string.IsNullOrWhiteSpace(f.Label) && !string.IsNullOrWhiteSpace(f.Value))
+            .ToDictionary(f => f.Label, f => f.Value, StringComparer.OrdinalIgnoreCase)
+            ?? new System.Collections.Generic.Dictionary<string, string>();
+
+        _updating = true;
+        TemplateFields.Clear();
+        foreach (var def in template.Fields)
+            TemplateFields.Add(new EntryFieldRowViewModel(def.Label,
+                existing.TryGetValue(def.Label, out var v) ? v : string.Empty,
+                isSecret: def.Secret,
+                remove: RemoveField));
+        OnPropertyChanged(nameof(HasTemplateFields));
+        _updating = false;
+    }
+
+    private void RemoveField(EntryFieldRowViewModel row) => TemplateFields.Remove(row);
+
+    [RelayCommand]
+    private void AddField()
+    {
+        if (TemplateFields.Count >= 40) return;
+        TemplateFields.Add(new EntryFieldRowViewModel(string.Empty, string.Empty, remove: RemoveField));
+        OnPropertyChanged(nameof(HasTemplateFields));
+    }
+
     // ---------- secret entries ----------
 
     private SecretEntryViewModel NewSecretRow(string name, string value)
@@ -398,8 +453,8 @@ public partial class EntryFormViewModel : ViewModelBase
             {
                 Notes = Notes.Trim(),
                 Fields = TemplateFields
-                    .Where(f => f.Value.Trim().Length > 0)
-                    .Select(f => new EntryField { Label = f.Label, Value = f.Value.Trim() })
+                    .Where(f => f.Label.Trim().Length > 0 && f.Value.Trim().Length > 0)
+                    .Select(f => new EntryField { Label = f.Label.Trim(), Value = f.Value.Trim() })
                     .ToList(),
                 Secrets = collectedSecrets,
             };
@@ -469,13 +524,20 @@ public partial class SecretEntryViewModel : ViewModelBase
 
 public partial class EntryFieldRowViewModel : ViewModelBase
 {
-    [ObservableProperty] private string value = string.Empty;
+    private readonly Action<EntryFieldRowViewModel> _remove;
 
-    public EntryFieldRowViewModel(string label, string value)
+    [ObservableProperty] private string label;
+    [ObservableProperty] private string value;
+
+    public EntryFieldRowViewModel(string label, string value, bool isSecret = false, Action<EntryFieldRowViewModel>? remove = null)
     {
         Label = label;
         Value = value;
+        IsSecret = isSecret;
+        _remove = remove ?? (_ => { });
+        RemoveCommand = new RelayCommand(() => _remove(this));
     }
 
-    public string Label { get; }
+    public bool IsSecret { get; }
+    public IRelayCommand RemoveCommand { get; }
 }
